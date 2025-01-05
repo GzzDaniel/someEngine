@@ -192,7 +192,7 @@ private:
 					break;
 				case SDLK_LEFT: 
 					std::cout << "left" << std::endl; 
-					keyPress = KEY_PRESS_LEFT;
+					keyPress = KEY_PRESS_LEFT; 
 					break;
 				case SDLK_RIGHT: 
 					std::cout << "right" << std::endl; 
@@ -217,7 +217,7 @@ private:
 		return;
 	}
 	void update() {
-		
+		//TODO
 		return;
 	}
 	void display() 

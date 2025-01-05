@@ -43,6 +43,7 @@ void Player::render(PlayerSprite _sprite)
 	SDL_Rect quadsArray[NUMBER_OF_SPRITES];
 
 	int scale = 5;
+
 	quadsArray[FACING_DOWN] = { 15, 9, 18, 23 };
 	quadsArray[FACING_LEFT] = { 51, 9, 18, 23 };
 	quadsArray[FACING_UP] = { 79, 9, 19, 23 };
