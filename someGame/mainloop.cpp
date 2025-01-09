@@ -2,6 +2,33 @@
 #include "mainloop.h"
 
 
+void ControllerManager::pressKey(Keypress key){
+	KeysPressed[key] = true;
+	keypressDeque[numKeysPressed] = key;
+	numKeysPressed++;
+}
+void ControllerManager::releaseKey(Keypress key) {
+	KeysPressed[key] = false;
+	numKeysPressed--;
+	int i = 0;
+	int j = 0;
+	while (i < NUM_KEY_STATES) {
+		if (KeysPressed[keypressDeque[i]]) {
+			// if key is pressed copy it to the head of the list
+			keypressDeque[j] = keypressDeque[i];
+			j++;
+			i++;
+		}
+		else {
+			i++;
+		}
+	}
+	for (int i = 0; i < NUM_KEY_STATES - numKeysPressed; i++) {
+		// replace the rest of the deque with null presses (0)
+		keypressDeque[numKeysPressed + i] = KEY_PRESS_NULL;
+	}
+}
+
 
 void GameObject::setPos(double inxpos, double inypos) {
 	xpos = inxpos;
@@ -41,15 +68,62 @@ void Player::loadmedia()
 	quadsArray[FACING_UP] = { 79, 9, 19, 23 };
 
 }
+
+void Player::handleInput(ControllerManager* controller)
+{
+	velocityBools[RIGHT] = controller->isKeyPressed(KEY_PRESS_RIGHT);
+	velocityBools[LEFT] = controller->isKeyPressed(KEY_PRESS_LEFT);
+	velocityBools[UP] = controller->isKeyPressed(KEY_PRESS_UP);
+	velocityBools[DOWN] = controller->isKeyPressed(KEY_PRESS_DOWN);
+
+
+
+}
+void Player::update()
+{
+	double const speed = 0.25;
+
+	// TODO Dynamic and Static classes, or maybe only dynamic bc it adds move functiuons based on velocity. it will store the
+	// Velocity variables
+	verticalVelocity = 0;
+	HorizontalVelocity = 0;
+	diagonalFactor = 1;
+
+	if (velocityBools[UP]) {
+		verticalVelocity -= 1;
+	}
+	if (velocityBools[DOWN]) {
+		verticalVelocity += 1;
+	}
+	if (velocityBools[RIGHT]) {
+		HorizontalVelocity += 1;
+	}
+	if (velocityBools[LEFT]) {
+		HorizontalVelocity -= 1;
+	}
+	if (HorizontalVelocity != 0 && verticalVelocity != 0) {
+		// used to normalize diagonal movement. otherwise diagonal movement f e e l s slightly faster
+		diagonalFactor = 0.7071067811865476;
+	}
+
+	move(HorizontalVelocity * speed * diagonalFactor, verticalVelocity * speed * diagonalFactor);
+
+}
 void Player::render()
 {
-	//PlayerSprite _sprite = currSprite;
 
-
-
-
-
-
+	if (HorizontalVelocity > 0) {
+		currSprite = FACING_RIGHT;
+	}
+	if (HorizontalVelocity < 0) {
+		currSprite = FACING_LEFT;
+	}
+	if (verticalVelocity > 0) {
+		currSprite = FACING_DOWN;
+	}
+	if (verticalVelocity < 0) {
+		currSprite = FACING_UP;
+	}
 
 
 	int scale = 3;
@@ -62,98 +136,9 @@ void Player::render()
 	}
 
 	SDL_RenderCopyEx(_renderer, texture, &quadsArray[currSprite], &dstQuad, 0, NULL, SDL_FLIP_NONE);
-}
-void Player::update()
-{
-	double const speed = 0.3;
-	double horizontal = 0;
-	double vertical = 0;
-	double diagonalFactor = 1;
-
-	/*if (state == WALKING) {
-		switch (direction)
-		{
-
-		case UP:
-			prevSprite = FACING_UP;
-			move(0, -speed);
-			break;
-		case DOWN:
-			prevSprite = FACING_DOWN;
-			move(0, speed);
-			break;
-		case LEFT:
-			prevSprite = FACING_LEFT;
-			move(-speed, 0);
-			break;
-		case RIGHT:
-			prevSprite = FACING_RIGHT;
-			move(speed, 0);
-			break;
-		}
-
-	*/
-	bool changeSprite = true;
-	if (isKeyPressed[KEY_PRESS_UP]) {
-		vertical -= 1;
-		//currSprite = FACING_UP;
-		}
-	if (isKeyPressed[KEY_PRESS_DOWN]) {
-		vertical += 1;
-		//currSprite = FACING_DOWN;
-		}
-	if (isKeyPressed[KEY_PRESS_LEFT]) {
-		horizontal -= 1;
-		//currSprite = FACING_LEFT;
-		}
-	if (isKeyPressed[KEY_PRESS_RIGHT]) {
-		horizontal += 1;
-		//currSprite = FACING_RIGHT;
-		}
-	if (horizontal != 0 && vertical != 0) {
-		diagonalFactor = 0.7071067811865476;
-	}
-
-	move(horizontal * speed * diagonalFactor, vertical * speed * diagonalFactor);
 	
 }
 
-void Player::handleInput(Keypress k)
-{
-	
-	switch (k) 
-		// controller actions (pressing directional keys)
-	{
-	case KEY_PRESS_UP:
-		direction = UP;
-		currSprite = FACING_UP;
-		state = WALKING;
-		
-		break;
-	case KEY_PRESS_DOWN:
-		direction = DOWN;
-		currSprite = FACING_DOWN;
-		state = WALKING;
-		
-		break;
-	case KEY_PRESS_LEFT:
-		direction = LEFT;
-		currSprite = FACING_LEFT;
-		state = WALKING;
-		
-		break;
-	case KEY_PRESS_RIGHT:
-		direction = RIGHT;
-		currSprite = FACING_RIGHT;
-		state = WALKING;
-		
-		break;
-	/*case NO_KEY_PRESSED:
-		state = IDLE;
-		break;*/
-	}
-	
-}
 
 
 
@@ -165,10 +150,9 @@ int main(int argc, char* args[])
 	Player link;
 	
 	//link2.loadmedia();
-	engine.addObserver(&link);
 	engine.addInputObserver(&link);
+	//engine.addInputObserver(&link);
 
 	engine.gameLoop();
 
-	return 0;
-}
+	return;  

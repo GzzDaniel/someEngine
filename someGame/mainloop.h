@@ -27,21 +27,17 @@ Event _event;
 
 
 enum Keypress {
-	//KEY_PRESS_NULL,
+	KEY_PRESS_NULL,
+
 	KEY_PRESS_UP,
 	KEY_PRESS_DOWN,
 	KEY_PRESS_LEFT,
 	KEY_PRESS_RIGHT,
-
-	//NO_KEY_PRESSED,
-	NUM_KEYPRESSES
+	
+	NUM_KEY_STATES
 };
 
 Keypress _keyPress;
-
-
-// array of boolean values for the keypresses
-bool isKeyPressed[NUM_KEYPRESSES] = {false};
 
 
 Uint32 deltaTime=0 , oldTime=0, accumulator=0;
@@ -89,7 +85,58 @@ void close() {
 }
 
 
+// TODO keypress history
+// ControllerManager class offers methods to help other class with managinf inputs
+class ControllerManager
+{
+public:
+	ControllerManager() : numKeysPressed(0){}
+	~ControllerManager() {}
+	
+	void pressKey(Keypress k);
+	void releaseKey(Keypress k);
 
+	// returns the nth currently pressed key
+	Keypress getnKeyPressed(int n) {
+		return keypressDeque[n];
+	}
+	//returns last keypress
+	Keypress getLastKeypress() {
+		if (numKeysPressed - 1 >= 0) {
+			return keypressDeque[numKeysPressed-1];
+		}
+		else {
+			return KEY_PRESS_NULL;
+		}
+	}
+
+	//returns true if the keypress given was pressed
+	bool isKeyPressed(Keypress k) {
+		return KeysPressed[k];
+	}
+
+	void showDeque() {
+		for (int i = 0; i < 4; i++) {
+			std::cout << keypressDeque[i] << " ";
+		}
+		std::cout << "\n";
+	}
+
+private:
+	// array of boolean values for the keypresses
+	bool KeysPressed[NUM_KEY_STATES] = { false };
+
+	// use to keep track of the index
+	int numKeysPressed;
+	// array that shoes the order at which the keys were pressed
+	Keypress keypressDeque[NUM_KEY_STATES] = { KEY_PRESS_NULL };
+
+	
+
+};
+
+// GameObject class, some people call it Entity (I mighht change the name at some point). 
+// everything on screen is a GameObject
 class GameObject
 {
 public:
@@ -99,6 +146,8 @@ public:
 
 	void virtual setPos(double inxpos, double inypos);
 	void virtual move(double inxmove, double inymove);
+
+	void virtual handleInput(ControllerManager* CM) {}
 	void virtual update()=0; 
 	void virtual render() {}
 	void virtual onNotify(Event _event) {};
@@ -111,19 +160,13 @@ private:
 	double ypos;
 };
 
-class ControllerManager
-{
-public:
-	ControllerManager() {}
-	~ControllerManager() {}
 
-	void virtual handleInput(Keypress k) = 0;
-};
+
 
 class Subject
 {
 protected:
-	ControllerManager* inputobserverArray[5];
+	GameObject* inputobserverArray[5];
 	GameObject* observerArray[5];
 	int numInputObservers;
 	int numObservers;
@@ -136,16 +179,17 @@ public:
 		observerArray[numObservers] = _observer;
 		numObservers++;
 	}
-	void addInputObserver(ControllerManager* _observer) {
+	void addInputObserver(GameObject* _observer) {
 		inputobserverArray[numInputObservers] = _observer;
 		numInputObservers++;
+		addObserver(_observer);
 	}
 	
 };
 
 
 
-class Player : public GameObject, public ControllerManager
+class Player : public GameObject
 {
 private:
 	enum PlayerSprite {
@@ -171,11 +215,25 @@ private:
 	SDL_Texture* texture;
 	PlayerSprite currSprite;
 	SDL_Rect quadsArray[NUMBER_OF_SPRITES];
+
 	PlayerState state;
 	PlayerDirection direction;
 
+	// movement variables
+	double verticalVelocity;
+	double HorizontalVelocity;
+	double diagonalFactor;
+	bool velocityBools[NUMBER_OF_DIRECTIONS] = { false };
+
 public:
-	Player() : GameObject(0, 0), texture(NULL), currSprite(FACING_DOWN), direction(DOWN), state(IDLE)
+	Player() : GameObject(0, 0), 
+		texture(NULL), 
+		currSprite(FACING_DOWN),
+		direction(DOWN), 
+		state(IDLE), 
+		verticalVelocity(0), 
+		HorizontalVelocity(0), 
+		diagonalFactor(1)
 	{
 		loadmedia();
 	}
@@ -186,7 +244,8 @@ public:
 	void render( ) override;
 	void update() override;
 	//void onNotify(Event _event) override;
-	void handleInput(Keypress k) override;
+
+	void handleInput(ControllerManager* CM) override;
 
 };
 
@@ -222,11 +281,13 @@ public:
 		}
 	}
 	
-private:
-	void handleInput(Keypress k) {
-		for (int i = 0; i < numInputObservers; i++) {
+	ControllerManager _controllerManager;
 
-			inputobserverArray[i]->handleInput(k);
+private:
+	
+	void handleInput(ControllerManager* CMP) {
+		for (int i = 0; i < numInputObservers; i++) {
+			inputobserverArray[i]->handleInput(CMP);
 		}
 	}
 
@@ -244,24 +305,22 @@ private:
 				switch (sdl_event.key.keysym.sym )
 				{
 				case SDLK_UP: 
-					_keyPress = KEY_PRESS_UP;
-					isKeyPressed[KEY_PRESS_UP] = true;
+					/*_keyPress = KEY_PRESS_UP;
+					isKeyPressed[KEY_PRESS_UP] = true;*/
 					std::cout << "up" << std::endl;
+					_controllerManager.pressKey(KEY_PRESS_UP);
 					break;
 				case SDLK_DOWN: 
 					std::cout << "down" << std::endl;
-					_keyPress = KEY_PRESS_DOWN;
-					isKeyPressed[KEY_PRESS_DOWN] = true;
+					_controllerManager.pressKey(KEY_PRESS_DOWN);
 					break;
 				case SDLK_LEFT: 
 					std::cout << "left" << std::endl; 
-					_keyPress = KEY_PRESS_LEFT; 
-					isKeyPressed[KEY_PRESS_LEFT] = true;
+					_controllerManager.pressKey(KEY_PRESS_LEFT);
 					break;
 				case SDLK_RIGHT: 
 					std::cout << "right" << std::endl; 
-					_keyPress = KEY_PRESS_RIGHT;
-					isKeyPressed[KEY_PRESS_RIGHT] = true;
+					_controllerManager.pressKey(KEY_PRESS_RIGHT);
 					break;
 				}
 			}
@@ -269,24 +328,20 @@ private:
 				switch (sdl_event.key.keysym.sym)
 				{
 				case SDLK_UP:
-					//_keyPress = KEY_PRESS_UP;
-					isKeyPressed[KEY_PRESS_UP] = false;
+					_controllerManager.releaseKey(KEY_PRESS_UP);
 					std::cout << "up released" << std::endl;
 					break;
 				case SDLK_DOWN:
 					std::cout << "down released" << std::endl;
-					//_keyPress = KEY_PRESS_DOWN;
-					isKeyPressed[KEY_PRESS_DOWN] = false;
+					_controllerManager.releaseKey(KEY_PRESS_DOWN);
 					break;
 				case SDLK_LEFT:
 					std::cout << "left released" << std::endl;
-					//_keyPress = KEY_PRESS_LEFT; 
-					isKeyPressed[KEY_PRESS_LEFT] = false;
+					_controllerManager.releaseKey(KEY_PRESS_LEFT);
 					break;
 				case SDLK_RIGHT:
 					std::cout << "right released" << std::endl;
-					//_keyPress = KEY_PRESS_RIGHT;
-					isKeyPressed[KEY_PRESS_RIGHT] = false;
+					_controllerManager.releaseKey(KEY_PRESS_RIGHT);
 					break;
 				}
 			}
@@ -298,11 +353,11 @@ private:
 			
 		}
 		//std::cout << "last keypress: " << _keyPress <<std::endl;
-		//handleInput(_keyPress);
+
+		// notifies all observers to read all current inputs
+		handleInput(&_controllerManager);
 	
-
-		
-
+		_controllerManager.showDeque();
 		return;
 	}
 	void update() 
@@ -315,6 +370,7 @@ private:
 	}
 	void display() 
 	{
+		// renders all gameObjects and then switches buffers
 		for (int i = 0; i < numObservers; i++) {
 
 			observerArray[i]->render();
@@ -323,6 +379,8 @@ private:
 		SDL_RenderPresent(_renderer);
 		//Clear screen
 		SDL_RenderClear(_renderer);
+
+		// TODO render only characters on screen
 	}
 
 };
