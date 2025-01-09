@@ -144,15 +144,16 @@ void Player::render()
 
 int main(int argc, char* args[])
 {
-	
+
 	Engine engine;
 
 	Player link;
-	
+
 	//link2.loadmedia();
 	engine.addInputObserver(&link);
 	//engine.addInputObserver(&link);
 
 	engine.gameLoop();
 
-	return;  
+	return 0;
+}
