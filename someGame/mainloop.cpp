@@ -6,6 +6,7 @@ void ControllerManager::pressKey(Keypress key){
 	KeysPressed[key] = true;
 	keypressDeque[numKeysPressed] = key;
 	numKeysPressed++;
+
 }
 void ControllerManager::releaseKey(Keypress key) {
 	KeysPressed[key] = false;
@@ -28,7 +29,14 @@ void ControllerManager::releaseKey(Keypress key) {
 		keypressDeque[numKeysPressed + i] = KEY_PRESS_NULL;
 	}
 }
-
+int ControllerManager::getArrivalIndex(Keypress k)
+{
+	for (int i = 0; i < numKeysPressed; i++) {
+		if (k == keypressDeque[i]) {
+			return i;
+		}
+	}
+}
 
 void GameObject::setPos(double inxpos, double inypos) {
 	xpos = inxpos;
@@ -71,12 +79,69 @@ void Player::loadmedia()
 
 void Player::handleInput(ControllerManager* controller)
 {
-	velocityBools[RIGHT] = controller->isKeyPressed(KEY_PRESS_RIGHT);
-	velocityBools[LEFT] = controller->isKeyPressed(KEY_PRESS_LEFT);
-	velocityBools[UP] = controller->isKeyPressed(KEY_PRESS_UP);
-	velocityBools[DOWN] = controller->isKeyPressed(KEY_PRESS_DOWN);
+	moveBools[RIGHT] = controller->isKeyPressed(KEY_PRESS_RIGHT);
+	moveBools[LEFT] = controller->isKeyPressed(KEY_PRESS_LEFT);
+	moveBools[UP] = controller->isKeyPressed(KEY_PRESS_UP);
+	moveBools[DOWN] = controller->isKeyPressed(KEY_PRESS_DOWN);	
 
+	Keypress firstInput = KEY_PRESS_NULL;
+	Keypress horInput = KEY_PRESS_NULL;
+	Keypress verInput = KEY_PRESS_NULL;
 
+	if (controller->isKeyPressed(KEY_PRESS_DOWN) && controller->isKeyPressed(KEY_PRESS_UP)) 
+	{
+		if (controller->getArrivalIndex(KEY_PRESS_DOWN) > controller->getArrivalIndex(KEY_PRESS_UP)) {
+			moveBools[UP] = false;
+			verInput = KEY_PRESS_DOWN;
+		}
+		else {
+			moveBools[DOWN] = false;
+			verInput = KEY_PRESS_UP;
+		}
+	}
+	else {
+		if (moveBools[UP]) { verInput = KEY_PRESS_UP; }
+		if (moveBools[DOWN]) { verInput = KEY_PRESS_DOWN; }
+	}
+
+	if (controller->isKeyPressed(KEY_PRESS_LEFT) && controller->isKeyPressed(KEY_PRESS_RIGHT))
+	{
+		if (controller->getArrivalIndex(KEY_PRESS_LEFT) > controller->getArrivalIndex(KEY_PRESS_RIGHT)) {
+			moveBools[RIGHT] = false;
+			horInput = KEY_PRESS_LEFT;
+		}
+		else {
+			moveBools[LEFT] = false;
+			horInput = KEY_PRESS_RIGHT;
+		}
+	}
+	else {
+		if (moveBools[LEFT]) { horInput = KEY_PRESS_LEFT; }
+		if (moveBools[RIGHT]) { horInput = KEY_PRESS_RIGHT; }
+	}
+
+	if (controller->getArrivalIndex(verInput) < controller->getArrivalIndex(horInput)) {
+		firstInput = verInput;
+	}
+	else {
+		firstInput = horInput;
+	}
+
+	switch (firstInput) 
+	{
+	case KEY_PRESS_UP:
+		currSprite = FACING_UP;
+		break;
+	case KEY_PRESS_DOWN:
+		currSprite = FACING_DOWN;
+		break;
+	case KEY_PRESS_LEFT:
+		currSprite = FACING_LEFT;
+		break;
+	case KEY_PRESS_RIGHT:
+		currSprite = FACING_RIGHT;
+		break;
+	}
 
 }
 void Player::update()
@@ -89,16 +154,16 @@ void Player::update()
 	HorizontalVelocity = 0;
 	diagonalFactor = 1;
 
-	if (velocityBools[UP]) {
+	if (moveBools[UP]) {
 		verticalVelocity -= 1;
 	}
-	if (velocityBools[DOWN]) {
+	if (moveBools[DOWN]) {
 		verticalVelocity += 1;
 	}
-	if (velocityBools[RIGHT]) {
+	if (moveBools[RIGHT]) {
 		HorizontalVelocity += 1;
 	}
-	if (velocityBools[LEFT]) {
+	if (moveBools[LEFT]) {
 		HorizontalVelocity -= 1;
 	}
 	if (HorizontalVelocity != 0 && verticalVelocity != 0) {
@@ -111,20 +176,6 @@ void Player::update()
 }
 void Player::render()
 {
-
-	if (HorizontalVelocity > 0) {
-		currSprite = FACING_RIGHT;
-	}
-	if (HorizontalVelocity < 0) {
-		currSprite = FACING_LEFT;
-	}
-	if (verticalVelocity > 0) {
-		currSprite = FACING_DOWN;
-	}
-	if (verticalVelocity < 0) {
-		currSprite = FACING_UP;
-	}
-
 
 	int scale = 3;
 

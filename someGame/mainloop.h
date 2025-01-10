@@ -30,9 +30,9 @@ enum Keypress {
 	KEY_PRESS_NULL,
 
 	KEY_PRESS_UP,
+	KEY_PRESS_RIGHT, // 2
 	KEY_PRESS_DOWN,
-	KEY_PRESS_LEFT,
-	KEY_PRESS_RIGHT,
+	KEY_PRESS_LEFT, // 4, horizontal presses are even numbers 
 	
 	NUM_KEY_STATES
 };
@@ -109,6 +109,15 @@ public:
 			return KEY_PRESS_NULL;
 		}
 	}
+	Keypress getSecondLastKeypress() {
+		if (numKeysPressed - 2 >= 0) {
+			return keypressDeque[numKeysPressed - 2];
+		}
+		else {
+			return KEY_PRESS_NULL;
+		}
+	}
+	int getArrivalIndex(Keypress k);
 
 	//returns true if the keypress given was pressed
 	bool isKeyPressed(Keypress k) {
@@ -130,8 +139,6 @@ private:
 	int numKeysPressed;
 	// array that shoes the order at which the keys were pressed
 	Keypress keypressDeque[NUM_KEY_STATES] = { KEY_PRESS_NULL };
-
-	
 
 };
 
@@ -223,7 +230,7 @@ private:
 	double verticalVelocity;
 	double HorizontalVelocity;
 	double diagonalFactor;
-	bool velocityBools[NUMBER_OF_DIRECTIONS] = { false };
+	bool moveBools[NUMBER_OF_DIRECTIONS] = { false };
 
 public:
 	Player() : GameObject(0, 0), 
@@ -352,12 +359,13 @@ private:
 			// TODO FIX KEYS IMPLEMENTATION
 			
 		}
-		//std::cout << "last keypress: " << _keyPress <<std::endl;
+		//std::cout << _controllerManager.getLastKeypress() << _controllerManager.getSecondLastKeypress() << std::endl;
 
 		// notifies all observers to read all current inputs
 		handleInput(&_controllerManager);
 	
-		_controllerManager.showDeque();
+		//_controllerManager.showDeque();
+
 		return;
 	}
 	void update() 
