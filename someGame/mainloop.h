@@ -117,6 +117,7 @@ public:
 			return KEY_PRESS_NULL;
 		}
 	}
+
 	int getArrivalIndex(Keypress k);
 
 	//returns true if the keypress given was pressed
@@ -130,6 +131,11 @@ public:
 		}
 		std::cout << "\n";
 	}
+
+	Keypress getHorizontalDpress();
+	Keypress getVerticalDpress();
+	Keypress getFirstDpress();
+	Keypress getSecondDpress();
 
 private:
 	// array of boolean values for the keypresses

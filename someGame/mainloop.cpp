@@ -36,7 +36,87 @@ int ControllerManager::getArrivalIndex(Keypress k)
 			return i;
 		}
 	}
+	return NUM_KEY_STATES;
 }
+Keypress ControllerManager::getHorizontalDpress() 
+{
+	// the keys pressed later take priority
+	if (isKeyPressed(KEY_PRESS_LEFT) && isKeyPressed(KEY_PRESS_RIGHT))
+	{
+		//both pressed
+		if (getArrivalIndex(KEY_PRESS_LEFT) > getArrivalIndex(KEY_PRESS_RIGHT)) {
+			return KEY_PRESS_LEFT;
+		}
+		else {
+			return KEY_PRESS_RIGHT;
+		}
+	}
+	else 
+	{
+		// one pressed
+		if (isKeyPressed(KEY_PRESS_LEFT) ) { 
+			return KEY_PRESS_LEFT;
+		}
+		if (isKeyPressed(KEY_PRESS_RIGHT)) {
+			return KEY_PRESS_RIGHT;
+		}
+	}
+	// none pressed
+	return KEY_PRESS_NULL;
+}
+Keypress ControllerManager::getVerticalDpress() 
+{
+	// the keys pressed later take priority
+	if (isKeyPressed(KEY_PRESS_UP) && isKeyPressed(KEY_PRESS_DOWN))
+	{
+		//both pressed
+		if (getArrivalIndex(KEY_PRESS_UP) > getArrivalIndex(KEY_PRESS_DOWN)) {
+			return KEY_PRESS_UP;
+		}
+		else {
+			return KEY_PRESS_DOWN;
+		}
+	}
+	else
+	{
+		// one pressed
+		if (isKeyPressed(KEY_PRESS_UP)) {
+			return KEY_PRESS_UP;
+		}
+		if (isKeyPressed(KEY_PRESS_DOWN)) {
+			return KEY_PRESS_DOWN;
+		}
+	}
+	// none pressed
+	return KEY_PRESS_NULL;
+}
+//gets earliest press
+Keypress ControllerManager::getFirstDpress() 
+{
+	Keypress hor = getHorizontalDpress();
+	Keypress ver = getVerticalDpress();
+
+	if (getArrivalIndex( hor ) < getArrivalIndex( ver ) ) {
+		return hor;
+	}
+	else {
+		return ver;
+	}
+}
+Keypress ControllerManager::getSecondDpress()
+{
+	Keypress hor = getHorizontalDpress();
+	Keypress ver = getVerticalDpress();
+
+	if (getArrivalIndex(hor) > getArrivalIndex(ver)) {
+		return hor;
+	}
+	else {
+		return ver;
+	}
+}
+
+
 
 void GameObject::setPos(double inxpos, double inypos) {
 	xpos = inxpos;
@@ -79,69 +159,47 @@ void Player::loadmedia()
 
 void Player::handleInput(ControllerManager* controller)
 {
-	moveBools[RIGHT] = controller->isKeyPressed(KEY_PRESS_RIGHT);
-	moveBools[LEFT] = controller->isKeyPressed(KEY_PRESS_LEFT);
-	moveBools[UP] = controller->isKeyPressed(KEY_PRESS_UP);
-	moveBools[DOWN] = controller->isKeyPressed(KEY_PRESS_DOWN);	
 
-	Keypress firstInput = KEY_PRESS_NULL;
-	Keypress horInput = KEY_PRESS_NULL;
-	Keypress verInput = KEY_PRESS_NULL;
+	moveBools[RIGHT] = false;
+	moveBools[LEFT] = false;
+	moveBools[UP] = false;
+	moveBools[DOWN] = false;
 
-	if (controller->isKeyPressed(KEY_PRESS_DOWN) && controller->isKeyPressed(KEY_PRESS_UP)) 
-	{
-		if (controller->getArrivalIndex(KEY_PRESS_DOWN) > controller->getArrivalIndex(KEY_PRESS_UP)) {
-			moveBools[UP] = false;
-			verInput = KEY_PRESS_DOWN;
-		}
-		else {
-			moveBools[DOWN] = false;
-			verInput = KEY_PRESS_UP;
-		}
-	}
-	else {
-		if (moveBools[UP]) { verInput = KEY_PRESS_UP; }
-		if (moveBools[DOWN]) { verInput = KEY_PRESS_DOWN; }
-	}
-
-	if (controller->isKeyPressed(KEY_PRESS_LEFT) && controller->isKeyPressed(KEY_PRESS_RIGHT))
-	{
-		if (controller->getArrivalIndex(KEY_PRESS_LEFT) > controller->getArrivalIndex(KEY_PRESS_RIGHT)) {
-			moveBools[RIGHT] = false;
-			horInput = KEY_PRESS_LEFT;
-		}
-		else {
-			moveBools[LEFT] = false;
-			horInput = KEY_PRESS_RIGHT;
-		}
-	}
-	else {
-		if (moveBools[LEFT]) { horInput = KEY_PRESS_LEFT; }
-		if (moveBools[RIGHT]) { horInput = KEY_PRESS_RIGHT; }
-	}
-
-	if (controller->getArrivalIndex(verInput) < controller->getArrivalIndex(horInput)) {
-		firstInput = verInput;
-	}
-	else {
-		firstInput = horInput;
-	}
-
-	switch (firstInput) 
+	switch (controller->getFirstDpress())
 	{
 	case KEY_PRESS_UP:
 		currSprite = FACING_UP;
+		moveBools[UP] = true;
 		break;
 	case KEY_PRESS_DOWN:
 		currSprite = FACING_DOWN;
+		moveBools[DOWN] = true;
 		break;
 	case KEY_PRESS_LEFT:
 		currSprite = FACING_LEFT;
+		moveBools[LEFT] = true;
 		break;
 	case KEY_PRESS_RIGHT:
 		currSprite = FACING_RIGHT;
+		moveBools[RIGHT] = true;
 		break;
 	}
+	switch (controller->getSecondDpress())
+	{
+	case KEY_PRESS_UP:
+		moveBools[UP] = true;
+		break;
+	case KEY_PRESS_DOWN:
+		moveBools[DOWN] = true;
+		break;
+	case KEY_PRESS_LEFT:
+		moveBools[LEFT] = true;
+		break;
+	case KEY_PRESS_RIGHT:
+		moveBools[RIGHT] = true;
+		break;
+	}
+
 
 }
 void Player::update()
