@@ -2,13 +2,14 @@
 #include "mainloop.h"
 
 
-void ControllerManager::pressKey(Keypress key){
+void ControllerManager::pressKey(Keypress key)
+{
 	KeysPressed[key] = true;
 	keypressDeque[numKeysPressed] = key;
 	numKeysPressed++;
-
 }
-void ControllerManager::releaseKey(Keypress key) {
+void ControllerManager::releaseKey(Keypress key) 
+{
 	KeysPressed[key] = false;
 	numKeysPressed--;
 	int i = 0;
@@ -29,6 +30,28 @@ void ControllerManager::releaseKey(Keypress key) {
 		keypressDeque[numKeysPressed + i] = KEY_PRESS_NULL;
 	}
 }
+Keypress ControllerManager::getnKeyPressed(int n)
+{
+	return keypressDeque[n];
+}
+Keypress ControllerManager::getLastKeypress() 
+{
+	if (numKeysPressed - 1 >= 0) {
+		return keypressDeque[numKeysPressed - 1];
+	}
+	else {
+		return KEY_PRESS_NULL;
+	}
+} 
+Keypress ControllerManager::getSecondLastKeypress()
+{
+	if (numKeysPressed - 2 >= 0) {
+		return keypressDeque[numKeysPressed - 2];
+	}
+	else {
+		return KEY_PRESS_NULL;
+	}
+}
 int ControllerManager::getArrivalIndex(Keypress k)
 {
 	for (int i = 0; i < numKeysPressed; i++) {
@@ -37,6 +60,10 @@ int ControllerManager::getArrivalIndex(Keypress k)
 		}
 	}
 	return NUM_KEY_STATES;
+}
+bool ControllerManager::isKeyPressed(Keypress k) 
+{
+	return KeysPressed[k];
 }
 Keypress ControllerManager::getHorizontalDpress() 
 {
@@ -115,7 +142,12 @@ Keypress ControllerManager::getSecondDpress()
 		return ver;
 	}
 }
-
+void ControllerManager::showDeque() {
+	for (int i = 0; i < 4; i++) {
+		std::cout << keypressDeque[i] << " ";
+	}
+	std::cout << "\n";
+}
 
 
 void GameObject::setPos(double inxpos, double inypos) {
@@ -151,15 +183,51 @@ void Player::loadmedia()
 	}
 	SDL_FreeSurface(loadedSurface);
 
-	quadsArray[FACING_DOWN] = { 15, 9, 18, 23 };
-	quadsArray[FACING_LEFT] = { 51, 9, 18, 23 };
-	quadsArray[FACING_UP] = { 79, 9, 19, 23 };
+	standingSprites[DOWN] = { 15, 9, 19, 23 };
+	standingSprites[LEFT] = { 51, 9, 19, 23 };
+	standingSprites[UP] = { 79, 9, 19, 23 };
+
+	//TODO load sprite by multiplying and using for loops
+	// sprites are separated every 32 pixels horizontally
+	walkingDownSprites[0] = { 15, 77, 19, 23 };
+	walkingDownSprites[1] = { 47, 77, 19, 23 };
+	walkingDownSprites[2] = { 79, 77, 19, 23 };
+	walkingDownSprites[3] = { 111, 77, 19, 23 };
+	walkingDownSprites[4] = { 143, 77, 19, 23 };
+	walkingDownSprites[5] = { 175, 77, 19, 23 };
+	walkingDownSprites[6] = { 207, 77, 19, 23 };
+	walkingDownSprites[7] = { 239, 77, 19, 23 };
+	walkingDownSprites[8] = { 271, 77, 19, 23 };
+	walkingDownSprites[9] = { 303, 77, 19, 23 };
+
+	int startLeft = 349;
+	walkingLeftSprites[0] = { startLeft + 32 * 0, 77, 19, 23 };
+	walkingLeftSprites[1] = { startLeft + 32 * 1, 77, 19, 23 };
+	walkingLeftSprites[2] = { startLeft + 32 * 2, 77, 19, 23 };
+	walkingLeftSprites[3] = { startLeft + 32 * 3, 77, 19, 23 };
+	walkingLeftSprites[4] = { startLeft + 32 * 4, 77, 19, 23 };
+	walkingLeftSprites[5] = { startLeft + 32 * 5, 77, 19, 23 };
+	walkingLeftSprites[6] = { startLeft + 32 * 6, 77, 19, 23 };
+	walkingLeftSprites[7] = { startLeft + 32 * 7, 77, 19, 23 };
+	walkingLeftSprites[8] = { startLeft + 32 * 8, 77, 19, 23 };
+	walkingLeftSprites[9] = { startLeft + 32 * 9, 77, 19, 23 };
+
+	int startUp = 683;
+	walkingUpSprites[0] = { startUp + 32 * 0, 77, 19, 23 };
+	walkingUpSprites[1] = { startUp + 32 * 1, 77, 19, 23 };
+	walkingUpSprites[2] = { startUp + 32 * 2, 77, 19, 23 };
+	walkingUpSprites[3] = { startUp + 32 * 3, 77, 19, 23 };
+	walkingUpSprites[4] = { startUp + 32 * 4, 77, 19, 23 };
+	walkingUpSprites[5] = { startUp + 32 * 5, 77, 19, 23 };
+	walkingUpSprites[6] = { startUp + 32 * 6, 77, 19, 23 };
+	walkingUpSprites[7] = { startUp + 32 * 7, 77, 19, 23 };
+	walkingUpSprites[8] = { startUp + 32 * 8, 77, 19, 23 };
+	walkingUpSprites[9] = { startUp + 32 * 9, 77, 19, 23 };
+
 
 }
-
 void Player::handleInput(ControllerManager* controller)
 {
-
 	moveBools[RIGHT] = false;
 	moveBools[LEFT] = false;
 	moveBools[UP] = false;
@@ -168,21 +236,27 @@ void Player::handleInput(ControllerManager* controller)
 	switch (controller->getFirstDpress())
 	{
 	case KEY_PRESS_UP:
-		currSprite = FACING_UP;
+		direction = UP;
+		state = WALKING;
 		moveBools[UP] = true;
 		break;
 	case KEY_PRESS_DOWN:
-		currSprite = FACING_DOWN;
+		direction = DOWN;
+		state = WALKING;
 		moveBools[DOWN] = true;
 		break;
 	case KEY_PRESS_LEFT:
-		currSprite = FACING_LEFT;
+		direction = LEFT;
+		state = WALKING;
 		moveBools[LEFT] = true;
 		break;
 	case KEY_PRESS_RIGHT:
-		currSprite = FACING_RIGHT;
+		direction = RIGHT;
+		state = WALKING;
 		moveBools[RIGHT] = true;
 		break;
+	default:
+		state = IDLE;
 	}
 	switch (controller->getSecondDpress())
 	{
@@ -204,8 +278,6 @@ void Player::handleInput(ControllerManager* controller)
 }
 void Player::update()
 {
-	double const speed = 0.25;
-
 	// TODO Dynamic and Static classes, or maybe only dynamic bc it adds move functiuons based on velocity. it will store the
 	// Velocity variables
 	verticalVelocity = 0;
@@ -215,13 +287,13 @@ void Player::update()
 	if (moveBools[UP]) {
 		verticalVelocity -= 1;
 	}
-	if (moveBools[DOWN]) {
+	else if (moveBools[DOWN]) {
 		verticalVelocity += 1;
 	}
 	if (moveBools[RIGHT]) {
 		HorizontalVelocity += 1;
 	}
-	if (moveBools[LEFT]) {
+	else if (moveBools[LEFT]) {
 		HorizontalVelocity -= 1;
 	}
 	if (HorizontalVelocity != 0 && verticalVelocity != 0) {
@@ -234,21 +306,43 @@ void Player::update()
 }
 void Player::render()
 {
-
-	int scale = 3;
-
 	SDL_Rect dstQuad = { (int)getxPos(), (int)getyPos(), 18 * scale, 23 * scale };
 
-	if (currSprite == FACING_RIGHT) {
+	if (state == IDLE)
+	{
+		frameNum = 0;
 
-		SDL_RenderCopyEx(_renderer, texture, &quadsArray[FACING_LEFT], &dstQuad, 0, NULL, SDL_FLIP_HORIZONTAL);
+		if (direction == RIGHT) {
+
+			SDL_RenderCopyEx(_renderer, texture, &standingSprites[LEFT], &dstQuad, 0, NULL, SDL_FLIP_HORIZONTAL);
+		}
+
+		SDL_RenderCopyEx(_renderer, texture, &standingSprites[direction], &dstQuad, 0, NULL, SDL_FLIP_NONE);
 	}
-
-	SDL_RenderCopyEx(_renderer, texture, &quadsArray[currSprite], &dstQuad, 0, NULL, SDL_FLIP_NONE);
+	if (state == WALKING) 
+	{
+		switch (direction) {
+		case DOWN:
+			SDL_RenderCopyEx(_renderer, texture, &walkingDownSprites[frameNum / animationDelay], &dstQuad, 0, NULL, SDL_FLIP_NONE);
+			break;
+		case LEFT:
+			SDL_RenderCopyEx(_renderer, texture, &walkingLeftSprites[frameNum / animationDelay], &dstQuad, 0, NULL, SDL_FLIP_NONE);
+			break;
+		case RIGHT:
+			SDL_RenderCopyEx(_renderer, texture, &walkingLeftSprites[frameNum / animationDelay], &dstQuad, 0, NULL, SDL_FLIP_HORIZONTAL);
+			break;
+		case UP:
+			SDL_RenderCopyEx(_renderer, texture, &walkingUpSprites[frameNum / animationDelay], &dstQuad, 0, NULL, SDL_FLIP_NONE);
+			break;
+		}
+		
+		frameNum++;
+		if (frameNum/animationDelay >= 10) {
+			frameNum = 0;
+		}
+	}
 	
 }
-
-
 
 
 int main(int argc, char* args[])
@@ -256,11 +350,8 @@ int main(int argc, char* args[])
 
 	Engine engine;
 
-	Player link;
-
-	//link2.loadmedia();
+	Player link(SCREEN_WIDTH/2, SCREEN_HEIGHT-100);
 	engine.addInputObserver(&link);
-	//engine.addInputObserver(&link);
 
 	engine.gameLoop();
 

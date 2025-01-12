@@ -25,7 +25,6 @@ enum Event {
 };
 Event _event;
 
-
 enum Keypress {
 	KEY_PRESS_NULL,
 
@@ -36,13 +35,9 @@ enum Keypress {
 	
 	NUM_KEY_STATES
 };
-
 Keypress _keyPress;
 
-
 Uint32 deltaTime=0 , oldTime=0, accumulator=0;
-
-
 
 bool initializeSDL()
 {
@@ -58,7 +53,7 @@ bool initializeSDL()
 		return false;
 	}
 
-	_renderer = SDL_CreateRenderer(_window, -1, SDL_RENDERER_ACCELERATED);
+	_renderer = SDL_CreateRenderer(_window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 	if (_renderer == NULL) {
 		std::cout << "Failed creating renderer " << SDL_GetError() << "\n";
 		return false;
@@ -97,41 +92,24 @@ public:
 	void releaseKey(Keypress k);
 
 	// returns the nth currently pressed key
-	Keypress getnKeyPressed(int n) {
-		return keypressDeque[n];
-	}
-	//returns last keypress
-	Keypress getLastKeypress() {
-		if (numKeysPressed - 1 >= 0) {
-			return keypressDeque[numKeysPressed-1];
-		}
-		else {
-			return KEY_PRESS_NULL;
-		}
-	}
-	Keypress getSecondLastKeypress() {
-		if (numKeysPressed - 2 >= 0) {
-			return keypressDeque[numKeysPressed - 2];
-		}
-		else {
-			return KEY_PRESS_NULL;
-		}
-	}
+	Keypress getnKeyPressed(int n);
 
+	//returns last keypress
+	Keypress getLastKeypress();
+
+	//returns second to last keypress
+	Keypress getSecondLastKeypress();
+
+	// returns the chronological index at which the specified keypress arrived
 	int getArrivalIndex(Keypress k);
 
 	//returns true if the keypress given was pressed
-	bool isKeyPressed(Keypress k) {
-		return KeysPressed[k];
-	}
+	bool isKeyPressed(Keypress k);
 
-	void showDeque() {
-		for (int i = 0; i < 4; i++) {
-			std::cout << keypressDeque[i] << " ";
-		}
-		std::cout << "\n";
-	}
+	//prints the deque
+	void showDeque();
 
+	// Gets the KEypress taking into accound physical limitantions of a Dpad
 	Keypress getHorizontalDpress();
 	Keypress getVerticalDpress();
 	Keypress getFirstDpress();
@@ -174,13 +152,11 @@ private:
 };
 
 
-
-
 class Subject
 {
 protected:
-	GameObject* inputobserverArray[5];
-	GameObject* observerArray[5];
+	GameObject* inputobserverArray[5] = { 0 };
+	GameObject* observerArray[5] = { 0 };
 	int numInputObservers;
 	int numObservers;
 
@@ -201,17 +177,38 @@ public:
 };
 
 
-
 class Player : public GameObject
 {
+public:
+
+	Player(int posx, int posy) : GameObject(posx, posy),
+
+		texture(NULL),
+
+		direction(DOWN),
+		frameNum(0),
+		state(IDLE),
+
+		verticalVelocity(0),
+		HorizontalVelocity(0),
+		diagonalFactor(1),
+
+		speed(0),
+		scale(3),
+		animationDelay(4)
+	{
+		loadmedia();
+	}
+	~Player() {}
+
+	void loadmedia();
+	void render() override;
+	void update() override;
+	//void onNotify(Event _event) override;
+
+	void handleInput(ControllerManager* CM) override;
+
 private:
-	enum PlayerSprite {
-		FACING_DOWN,
-		FACING_LEFT,
-		FACING_UP,
-		FACING_RIGHT,
-		NUMBER_OF_SPRITES
-	};
 	enum PlayerDirection {
 		DOWN,
 		LEFT,
@@ -222,12 +219,19 @@ private:
 	enum PlayerState {
 		WALKING,
 		IDLE,
+		JUMPING,
+
 		NUMBER_OF_STATES
 	};
 
 	SDL_Texture* texture;
-	PlayerSprite currSprite;
-	SDL_Rect quadsArray[NUMBER_OF_SPRITES];
+
+	// animation dimentions
+	SDL_Rect standingSprites[NUMBER_OF_DIRECTIONS];
+	SDL_Rect walkingDownSprites[10];
+	SDL_Rect walkingLeftSprites[10];
+	SDL_Rect walkingUpSprites[10];
+	int frameNum;
 
 	PlayerState state;
 	PlayerDirection direction;
@@ -238,27 +242,10 @@ private:
 	double diagonalFactor;
 	bool moveBools[NUMBER_OF_DIRECTIONS] = { false };
 
-public:
-	Player() : GameObject(0, 0), 
-		texture(NULL), 
-		currSprite(FACING_DOWN),
-		direction(DOWN), 
-		state(IDLE), 
-		verticalVelocity(0), 
-		HorizontalVelocity(0), 
-		diagonalFactor(1)
-	{
-		loadmedia();
-	}
-	~Player() {}
-	Player(int posx, int posy) : GameObject(posx, posy), texture(NULL), currSprite(FACING_DOWN) { loadmedia(); }
-
-	void loadmedia();
-	void render( ) override;
-	void update() override;
-	//void onNotify(Event _event) override;
-
-	void handleInput(ControllerManager* CM) override;
+	// constants
+	double const speed;
+	int const scale;
+	int const animationDelay;
 
 };
 
