@@ -6,8 +6,9 @@
 #include <stdio.h>
 #include <string>
 #include <iostream>
-#include <vector>
+#include <cmath>
 
+#include "controllermanager.h"
 //#include "player.h"
 
 
@@ -25,17 +26,17 @@ enum Event {
 };
 Event _event;
 
-enum Keypress {
-	KEY_PRESS_NULL,
+enum CollisionType {
+	TYPE_PLAYER,
+	TYPE_WALL,
+	TYPE_ENEMY,
 
-	KEY_PRESS_UP,
-	KEY_PRESS_RIGHT, // 2
-	KEY_PRESS_DOWN,
-	KEY_PRESS_LEFT, // 4, horizontal presses are even numbers 
-	
-	NUM_KEY_STATES
+	// types used to detect collision direction
+	TYPE_HORIZONTAL,
+	TYPE_VERTICAL,
+	TYPE_TOTAL,
+	TYPE_NONE
 };
-Keypress _keyPress;
 
 Uint32 deltaTime=0 , oldTime=0, accumulator=0;
 
@@ -80,51 +81,7 @@ void close() {
 }
 
 
-// TODO keypress history
-// ControllerManager class offers methods to help other class with managinf inputs
-class ControllerManager
-{
-public:
-	ControllerManager() : numKeysPressed(0){}
-	~ControllerManager() {}
-	
-	void pressKey(Keypress k);
-	void releaseKey(Keypress k);
 
-	// returns the nth currently pressed key
-	Keypress getnKeyPressed(int n);
-
-	//returns last keypress
-	Keypress getLastKeypress();
-
-	//returns second to last keypress
-	Keypress getSecondLastKeypress();
-
-	// returns the chronological index at which the specified keypress arrived
-	int getArrivalIndex(Keypress k);
-
-	//returns true if the keypress given was pressed
-	bool isKeyPressed(Keypress k);
-
-	//prints the deque
-	void showDeque();
-
-	// Gets the KEypress taking into accound physical limitantions of a Dpad
-	Keypress getHorizontalDpress();
-	Keypress getVerticalDpress();
-	Keypress getFirstDpress();
-	Keypress getSecondDpress();
-
-private:
-	// array of boolean values for the keypresses
-	bool KeysPressed[NUM_KEY_STATES] = { false };
-
-	// use to keep track of the index
-	int numKeysPressed;
-	// array that shoes the order at which the keys were pressed
-	Keypress keypressDeque[NUM_KEY_STATES] = { KEY_PRESS_NULL };
-
-};
 
 // GameObject class, some people call it Entity (I mighht change the name at some point). 
 // everything on screen is a GameObject
@@ -135,11 +92,12 @@ public:
 	GameObject(double xpos, double ypos) : xpos(xpos), ypos(ypos) {}
 	virtual ~GameObject() {}
 
-	void virtual setPos(double inxpos, double inypos);
+	void virtual setxPos(double inxpos);
+	void virtual setyPos(double inypos);
 	void virtual move(double inxmove, double inymove);
 
 	void virtual handleInput(ControllerManager* CM) {}
-	void virtual update()=0; 
+	void virtual update() = 0;
 	void virtual render() {}
 	void virtual onNotify(Event _event) {};
 
@@ -151,51 +109,81 @@ private:
 	double ypos;
 };
 
-
-class Subject
+class Collider
 {
-protected:
-	GameObject* inputobserverArray[5] = { 0 };
-	GameObject* observerArray[5] = { 0 };
-	int numInputObservers;
-	int numObservers;
-
 public:
-	Subject() : numInputObservers(0), numObservers(0) { }
-	virtual ~Subject() {}
+	Collider(int centerx, int centery, int w, int h, CollisionType t):
+		type(t),
+		centerx(centerx),
+		centery(centery),
+		halfWidth(w/2),
+		halfHeight(h/2),
+		prevCenterx(centerx),
+		prevCentery(centery)
+		{}
+	~Collider() {}
 
-	void addObserver(GameObject* _observer) {
-		observerArray[numObservers] = _observer;
-		numObservers++;
-	}
-	void addInputObserver(GameObject* _observer) {
-		inputobserverArray[numInputObservers] = _observer;
-		numInputObservers++;
-		addObserver(_observer);
-	}
-	
+	// returns true if the object is colliding with the specified object
+	bool isColliding(Collider* c);
+
+	// draws the hitbox using 4 lines
+	void drawCollisionBox();
+
+	// places the center at specified position
+	void setColliderCenter(int x, int y);
+
+	// returns the collider type
+	CollisionType getType();
+
+	// returns the previous frame collision for direction detection
+	CollisionType getPrevCollision(Collider* c);
+
+	// handle collision with other colliders
+	void virtual onCollision(Collider* c) {}
+
+
+	int getHalfWidth() { return halfWidth; }
+	int getHalfHeight() { return halfHeight; }
+	int getCenterx() { return centerx; }
+	int getCentery() { return centery; }
+
+private:
+	bool isverticalColliding(Collider* c);
+	bool isHorizontalColliding(Collider* c);
+
+	CollisionType type;
+
+	int centerx;
+	int centery;
+	int halfWidth;
+	int halfHeight;
+
+	int prevCenterx;
+	int prevCentery;
 };
 
-
-class Player : public GameObject
+// TODO use state design pattern 
+class Player : public GameObject, public Collider
 {
 public:
 
-	Player(int posx, int posy) : GameObject(posx, posy),
-
+	Player(int posx, int posy, int scale) : 
+		GameObject(posx, posy), 
+		Collider(posx+17*scale/2, posy+23*scale/2, 30, 53, TYPE_PLAYER),
 		texture(NULL),
 
 		direction(DOWN),
 		frameNum(0),
-		state(IDLE),
+		state(STATE_IDLE),
 
 		verticalVelocity(0),
 		HorizontalVelocity(0),
 		diagonalFactor(1),
 
-		speed(0),
-		scale(3),
-		animationDelay(4)
+		speed(0.25),
+		scale(scale),
+		animationDelay(3),
+		inMeowZone(false)
 	{
 		loadmedia();
 	}
@@ -204,6 +192,7 @@ public:
 	void loadmedia();
 	void render() override;
 	void update() override;
+	void onCollision(Collider* other) override;
 	//void onNotify(Event _event) override;
 
 	void handleInput(ControllerManager* CM) override;
@@ -217,9 +206,9 @@ private:
 		NUMBER_OF_DIRECTIONS
 	};
 	enum PlayerState {
-		WALKING,
-		IDLE,
-		JUMPING,
+		STATE_WALKING,
+		STATE_IDLE,
+		STATE_JUMPING,
 
 		NUMBER_OF_STATES
 	};
@@ -247,8 +236,49 @@ private:
 	int const scale;
 	int const animationDelay;
 
+	// other bools
+	bool inMeowZone;
+
 };
 
+class Obstacle : public GameObject, public Collider
+{
+public:
+	Obstacle(int x, int y):
+		GameObject(x, y), 
+		Collider(x, y, 100, 100, TYPE_WALL) {}
+	~Obstacle() {}
+	void update() override {drawCollisionBox(); }
+};
+
+class Subject
+{
+protected:
+	GameObject* inputobserverArray[5] = { 0 };
+	GameObject* observerArray[5] = { 0 };
+	Collider* collidersArray[5] = { 0 };
+	int numInputObservers;
+	int numObservers;
+	int numColliderObservers;
+
+public:
+	Subject() : numInputObservers(0), numObservers(0), numColliderObservers(0) { }
+	virtual ~Subject() {}
+
+	void addObserver(GameObject* _observer) {
+		observerArray[numObservers] = _observer;
+		numObservers++;
+	}
+	void addInputObserver(GameObject* _observer) {
+		inputobserverArray[numInputObservers] = _observer;
+		numInputObservers++;
+		addObserver(_observer);
+	}
+	void addColliderObserver(Collider* _observer) {
+		collidersArray[numColliderObservers] = _observer;
+		numColliderObservers++;
+	}
+};
 
 class Engine : public Subject
 {
@@ -260,7 +290,7 @@ public:
 	}
 	~Engine() { close(); }
 
-	void gameLoop()
+	void run()
 	{
 		while (running)
 		{
@@ -301,23 +331,24 @@ private:
 			}
 			else if (sdl_event.type == SDL_KEYDOWN && sdl_event.key.repeat == 0)
 			{
-				//&& _event.key.repeat == 0
 				switch (sdl_event.key.keysym.sym )
 				{
 				case SDLK_UP: 
-					/*_keyPress = KEY_PRESS_UP;
-					isKeyPressed[KEY_PRESS_UP] = true;*/
+				case SDLK_w:
 					std::cout << "up" << std::endl;
 					_controllerManager.pressKey(KEY_PRESS_UP);
 					break;
 				case SDLK_DOWN: 
+				case SDLK_s:
 					std::cout << "down" << std::endl;
 					_controllerManager.pressKey(KEY_PRESS_DOWN);
 					break;
+				case SDLK_a:
 				case SDLK_LEFT: 
 					std::cout << "left" << std::endl; 
 					_controllerManager.pressKey(KEY_PRESS_LEFT);
 					break;
+				case SDLK_d:
 				case SDLK_RIGHT: 
 					std::cout << "right" << std::endl; 
 					_controllerManager.pressKey(KEY_PRESS_RIGHT);
@@ -328,44 +359,49 @@ private:
 				switch (sdl_event.key.keysym.sym)
 				{
 				case SDLK_UP:
+				case SDLK_w:
 					_controllerManager.releaseKey(KEY_PRESS_UP);
 					std::cout << "up released" << std::endl;
 					break;
 				case SDLK_DOWN:
+				case SDLK_s:
 					std::cout << "down released" << std::endl;
 					_controllerManager.releaseKey(KEY_PRESS_DOWN);
 					break;
 				case SDLK_LEFT:
+				case SDLK_a:
 					std::cout << "left released" << std::endl;
 					_controllerManager.releaseKey(KEY_PRESS_LEFT);
 					break;
 				case SDLK_RIGHT:
+				case SDLK_d:
 					std::cout << "right released" << std::endl;
 					_controllerManager.releaseKey(KEY_PRESS_RIGHT);
 					break;
 				}
-			}
-			/*else {
-				std::cout << "no key pressed" << std::endl;
-				_keyPress = NO_KEY_PRESSED;
-			}*/
-			// TODO FIX KEYS IMPLEMENTATION
-			
+			}	
 		}
-		//std::cout << _controllerManager.getLastKeypress() << _controllerManager.getSecondLastKeypress() << std::endl;
-
 		// notifies all observers to read all current inputs
 		handleInput(&_controllerManager);
-	
-		//_controllerManager.showDeque();
-
 		return;
 	}
 	void update() 
 	{		
-		for (int i = 0; i < numObservers; i++) {
-
+		for (int i = 0; i < numObservers; i++) 
+		{
 			observerArray[i]->update();
+		}
+
+		// TODO use a smarter implementation for checking collisions
+		for (int i = 0; i < numColliderObservers; i++)
+		{
+			for (int j = 0; j < numColliderObservers; j++) {
+				if (i != j) {
+					if (collidersArray[i]->isColliding(collidersArray[j])) {
+						collidersArray[i]->onCollision(collidersArray[j]);
+					}
+				}
+			}
 		}
 		return;
 	}
@@ -379,6 +415,7 @@ private:
 		//Update screen
 		SDL_RenderPresent(_renderer);
 		//Clear screen
+		SDL_SetRenderDrawColor(_renderer, 0xFF, 0xFF, 0xFF, 0xFF);
 		SDL_RenderClear(_renderer);
 
 		// TODO render only characters on screen
