@@ -8,9 +8,9 @@
 #include <iostream>
 #include <cmath>
 
+#include "gameObject.h"
 #include "controllermanager.h"
-//#include "player.h"
-
+#include "player.h"
 
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
@@ -21,24 +21,9 @@ SDL_Renderer* _renderer = NULL;
 bool running = true;
 SDL_Event sdl_event;
 
-enum Event {
-	NUM_EVENTS
-};
-Event _event;
-
-enum CollisionType {
-	TYPE_PLAYER,
-	TYPE_WALL,
-	TYPE_ENEMY,
-
-	// types used to detect collision direction
-	TYPE_HORIZONTAL,
-	TYPE_VERTICAL,
-	TYPE_TOTAL,
-	TYPE_NONE
-};
 
 Uint32 deltaTime=0 , oldTime=0, accumulator=0;
+
 
 bool initializeSDL()
 {
@@ -81,166 +66,6 @@ void close() {
 }
 
 
-
-
-// GameObject class, some people call it Entity (I mighht change the name at some point). 
-// everything on screen is a GameObject
-class GameObject
-{
-public:
-	GameObject() : xpos(0), ypos(0) {}
-	GameObject(double xpos, double ypos) : xpos(xpos), ypos(ypos) {}
-	virtual ~GameObject() {}
-
-	void virtual setxPos(double inxpos);
-	void virtual setyPos(double inypos);
-	void virtual move(double inxmove, double inymove);
-
-	void virtual handleInput(ControllerManager* CM) {}
-	void virtual update() = 0;
-	void virtual render() {}
-	void virtual onNotify(Event _event) {};
-
-	double virtual getxPos();
-	double virtual getyPos();
-
-private:
-	double xpos;
-	double ypos;
-};
-
-class Collider
-{
-public:
-	Collider(int centerx, int centery, int w, int h, CollisionType t):
-		type(t),
-		centerx(centerx),
-		centery(centery),
-		halfWidth(w/2),
-		halfHeight(h/2),
-		prevCenterx(centerx),
-		prevCentery(centery)
-		{}
-	~Collider() {}
-
-	// returns true if the object is colliding with the specified object
-	bool isColliding(Collider* c);
-
-	// draws the hitbox using 4 lines
-	void drawCollisionBox();
-
-	// places the center at specified position
-	void setColliderCenter(int x, int y);
-
-	// returns the collider type
-	CollisionType getType();
-
-	// returns the previous frame collision for direction detection
-	CollisionType getPrevCollision(Collider* c);
-
-	// handle collision with other colliders
-	void virtual onCollision(Collider* c) {}
-
-
-	int getHalfWidth() { return halfWidth; }
-	int getHalfHeight() { return halfHeight; }
-	int getCenterx() { return centerx; }
-	int getCentery() { return centery; }
-
-private:
-	bool isverticalColliding(Collider* c);
-	bool isHorizontalColliding(Collider* c);
-
-	CollisionType type;
-
-	int centerx;
-	int centery;
-	int halfWidth;
-	int halfHeight;
-
-	int prevCenterx;
-	int prevCentery;
-};
-
-// TODO use state design pattern 
-class Player : public GameObject, public Collider
-{
-public:
-
-	Player(int posx, int posy, int scale) : 
-		GameObject(posx, posy), 
-		Collider(posx+17*scale/2, posy+23*scale/2, 30, 53, TYPE_PLAYER),
-		texture(NULL),
-
-		direction(DOWN),
-		frameNum(0),
-		state(STATE_IDLE),
-
-		verticalVelocity(0),
-		HorizontalVelocity(0),
-		diagonalFactor(1),
-
-		speed(0.25),
-		scale(scale),
-		animationDelay(3),
-		inMeowZone(false)
-	{
-		loadmedia();
-	}
-	~Player() {}
-
-	void loadmedia();
-	void render() override;
-	void update() override;
-	void onCollision(Collider* other) override;
-	//void onNotify(Event _event) override;
-
-	void handleInput(ControllerManager* CM) override;
-
-private:
-	enum PlayerDirection {
-		DOWN,
-		LEFT,
-		UP,
-		RIGHT,
-		NUMBER_OF_DIRECTIONS
-	};
-	enum PlayerState {
-		STATE_WALKING,
-		STATE_IDLE,
-		STATE_JUMPING,
-
-		NUMBER_OF_STATES
-	};
-
-	SDL_Texture* texture;
-
-	// animation dimentions
-	SDL_Rect standingSprites[NUMBER_OF_DIRECTIONS];
-	SDL_Rect walkingDownSprites[10];
-	SDL_Rect walkingLeftSprites[10];
-	SDL_Rect walkingUpSprites[10];
-	int frameNum;
-
-	PlayerState state;
-	PlayerDirection direction;
-
-	// movement variables
-	double verticalVelocity;
-	double HorizontalVelocity;
-	double diagonalFactor;
-	bool moveBools[NUMBER_OF_DIRECTIONS] = { false };
-
-	// constants
-	double const speed;
-	int const scale;
-	int const animationDelay;
-
-	// other bools
-	bool inMeowZone;
-
-};
-
 class Obstacle : public GameObject, public Collider
 {
 public:
@@ -248,8 +73,9 @@ public:
 		GameObject(x, y), 
 		Collider(x, y, 100, 100, TYPE_WALL) {}
 	~Obstacle() {}
-	void update() override {drawCollisionBox(); }
+	void update() override {drawCollisionBox(_renderer); }
 };
+
 
 class Subject
 {
@@ -410,7 +236,7 @@ private:
 		// renders all gameObjects and then switches buffers
 		for (int i = 0; i < numObservers; i++) {
 
-			observerArray[i]->render();
+			observerArray[i]->render(_renderer);
 		}
 		//Update screen
 		SDL_RenderPresent(_renderer);

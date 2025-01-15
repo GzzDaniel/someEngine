@@ -6,44 +6,18 @@
 #include <stdio.h>
 #include <string>
 #include <iostream>
+
 #include "controllermanager.h"
+#include "gameObject.h"
 
-// GameObject class, some people call it Entity (I mighht change the name at some point). 
-// everything on screen is a GameObject
-class GameObject
-{
-public:
-	GameObject() : xpos(0), ypos(0) {}
-	GameObject(double xpos, double ypos) : xpos(xpos), ypos(ypos) {}
-	virtual ~GameObject() {}
-
-	void virtual setPos(double inxpos, double inypos);
-	void virtual move(double inxmove, double inymove);
-
-	void virtual handleInput(ControllerManager* CM) {}
-	void virtual update() = 0;
-	void virtual render() {}
-	void virtual onNotify(Event _event) {};
-
-	double virtual getxPos();
-	double virtual getyPos();
-
-private:
-	double xpos;
-	double ypos;
-};
-
-
-
-
-
-
-class Player : public GameObject
+// TODO use state design pattern 
+class Player : public GameObject, public Collider
 {
 public:
 
-	Player(int posx, int posy) : GameObject(posx, posy),
-
+	Player(int posx, int posy, int scale) :
+		GameObject(posx, posy),
+		Collider(posx + 17 * scale / 2, posy + 23 * scale / 2, 30, 53, TYPE_PLAYER),
 		texture(NULL),
 
 		direction(DOWN),
@@ -55,16 +29,16 @@ public:
 		diagonalFactor(1),
 
 		speed(0.25),
-		scale(3),
+		scale(scale),
 		animationDelay(3)
 	{
-		loadmedia();
 	}
 	~Player() {}
 
-	void loadmedia();
-	void render() override;
+	void loadmedia(SDL_Renderer* _renderer);
+	void render(SDL_Renderer* _renderer) override;
 	void update() override;
+	void onCollision(Collider* other) override;
 	//void onNotify(Event _event) override;
 
 	void handleInput(ControllerManager* CM) override;
