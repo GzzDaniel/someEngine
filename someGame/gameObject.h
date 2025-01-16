@@ -10,7 +10,6 @@
 
 #include "controllermanager.h"
 
-
 enum Event {
 	NUM_EVENTS
 };

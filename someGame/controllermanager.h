@@ -1,6 +1,7 @@
 #ifndef CONTROLLERMANAGER_H_
 #define CONTROLLERMANAGER_H_
 
+#include <SDL.h>
 #include <iostream>
 
 // TODO keypress history
@@ -13,6 +14,8 @@ enum Keypress {
 	KEY_PRESS_DOWN,
 	KEY_PRESS_LEFT, // 4, horizontal presses are even numbers 
 
+	KEY_PRESS_SHIFT,
+
 	NUM_KEY_STATES
 };
 
@@ -22,8 +25,8 @@ public:
 	ControllerManager() : numKeysPressed(0) {}
 	~ControllerManager() {}
 
-	void pressKey(Keypress k);
-	void releaseKey(Keypress k);
+	void pressDpadKey(Keypress k);
+	void releaseDpadKey(Keypress k);
 
 	// returns the nth currently pressed key
 	Keypress getnKeyPressed(int n);
@@ -49,14 +52,21 @@ public:
 	Keypress getFirstDpress();
 	Keypress getSecondDpress();
 
+	void setLastKeyEvent(Keypress keyEvent);
+	Keypress getLastKeyEvent();
+
 private:
 	// array of boolean values for the keypresses
 	bool KeysPressed[NUM_KEY_STATES] = { false };
 
 	// use to keep track of the index
 	int numKeysPressed;
+
 	// array that shoes the order at which the keys were pressed
 	Keypress keypressDeque[NUM_KEY_STATES] = { KEY_PRESS_NULL };
+
+	// last key event
+	Keypress lastKeyEvent;
 
 };
 

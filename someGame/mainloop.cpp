@@ -14,7 +14,7 @@ int main(int argc, char* args[])
 	engine.addColliderObserver(&link);
 	link.loadmedia(_renderer);
 
-	Obstacle f(100, 100);
+	Obstacle f(250, 200);
 	engine.addObserver(&f);
 	engine.addColliderObserver(&f);
 

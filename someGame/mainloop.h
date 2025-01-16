@@ -162,23 +162,27 @@ private:
 				case SDLK_UP: 
 				case SDLK_w:
 					std::cout << "up" << std::endl;
-					_controllerManager.pressKey(KEY_PRESS_UP);
+					_controllerManager.pressDpadKey(KEY_PRESS_UP);
 					break;
 				case SDLK_DOWN: 
 				case SDLK_s:
 					std::cout << "down" << std::endl;
-					_controllerManager.pressKey(KEY_PRESS_DOWN);
+					_controllerManager.pressDpadKey(KEY_PRESS_DOWN);
 					break;
 				case SDLK_a:
 				case SDLK_LEFT: 
 					std::cout << "left" << std::endl; 
-					_controllerManager.pressKey(KEY_PRESS_LEFT);
+					_controllerManager.pressDpadKey(KEY_PRESS_LEFT);
 					break;
 				case SDLK_d:
 				case SDLK_RIGHT: 
 					std::cout << "right" << std::endl; 
-					_controllerManager.pressKey(KEY_PRESS_RIGHT);
+					_controllerManager.pressDpadKey(KEY_PRESS_RIGHT);
 					break;
+				case SDLK_LSHIFT:
+					_controllerManager.setLastKeyEvent(KEY_PRESS_SHIFT);
+					handleInput(&_controllerManager);
+					_controllerManager.setLastKeyEvent(KEY_PRESS_NULL);
 				}
 			}
 			else if (sdl_event.type == SDL_KEYUP) {
@@ -186,23 +190,23 @@ private:
 				{
 				case SDLK_UP:
 				case SDLK_w:
-					_controllerManager.releaseKey(KEY_PRESS_UP);
+					_controllerManager.releaseDpadKey(KEY_PRESS_UP);
 					std::cout << "up released" << std::endl;
 					break;
 				case SDLK_DOWN:
 				case SDLK_s:
 					std::cout << "down released" << std::endl;
-					_controllerManager.releaseKey(KEY_PRESS_DOWN);
+					_controllerManager.releaseDpadKey(KEY_PRESS_DOWN);
 					break;
 				case SDLK_LEFT:
 				case SDLK_a:
 					std::cout << "left released" << std::endl;
-					_controllerManager.releaseKey(KEY_PRESS_LEFT);
+					_controllerManager.releaseDpadKey(KEY_PRESS_LEFT);
 					break;
 				case SDLK_RIGHT:
 				case SDLK_d:
 					std::cout << "right released" << std::endl;
-					_controllerManager.releaseKey(KEY_PRESS_RIGHT);
+					_controllerManager.releaseDpadKey(KEY_PRESS_RIGHT);
 					break;
 				}
 			}	

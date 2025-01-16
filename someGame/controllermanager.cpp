@@ -1,12 +1,12 @@
 #include "controllermanager.h"
 
-void ControllerManager::pressKey(Keypress key)
+void ControllerManager::pressDpadKey(Keypress key)
 {
 	KeysPressed[key] = true;
 	keypressDeque[numKeysPressed] = key;
 	numKeysPressed++;
 }
-void ControllerManager::releaseKey(Keypress key)
+void ControllerManager::releaseDpadKey(Keypress key)
 {
 	KeysPressed[key] = false;
 	numKeysPressed--;
@@ -145,4 +145,13 @@ void ControllerManager::showDeque() {
 		std::cout << keypressDeque[i] << " ";
 	}
 	std::cout << "\n";
+}
+
+void ControllerManager::setLastKeyEvent(Keypress keyEvent)
+{
+	lastKeyEvent = keyEvent;
+}
+Keypress ControllerManager::getLastKeyEvent()
+{
+	return lastKeyEvent;
 }

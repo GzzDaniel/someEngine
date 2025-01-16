@@ -10,7 +10,87 @@
 #include "controllermanager.h"
 #include "gameObject.h"
 
-// TODO use state design pattern 
+enum PlayerDirection {
+	DOWN,
+	LEFT,
+	UP,
+	RIGHT,
+	NUMBER_OF_DIRECTIONS
+};
+
+// forward declare for the state classes
+class Player;
+
+class PlayerState
+{
+public:
+	virtual ~PlayerState() {}
+	virtual void handleInput(Player* player, ControllerManager* controller) {}
+	virtual void update(Player* player) {}
+	virtual void render(Player* player, SDL_Renderer* renderer) {}
+protected:
+	void changeState(Player* player, PlayerState* state);
+};
+
+class IdleState : public PlayerState
+{
+public:
+	~IdleState() {}
+	void handleInput(Player* player, ControllerManager* controller) override;
+	void update(Player* player) override;
+	void render(Player* player, SDL_Renderer* renderer) override;
+	static PlayerState* instance() {
+		static IdleState inst;
+		return &inst;
+	}
+
+};
+
+class WalkingState : public PlayerState
+{
+public:
+	~WalkingState() {}
+	void handleInput(Player* player, ControllerManager* controller) override;
+	void update(Player* player) override;
+	void render(Player* player, SDL_Renderer* renderer) override;
+	static PlayerState* instance() {
+		static WalkingState inst;
+		return &inst;
+	}
+
+};
+
+class RollState : public PlayerState
+{
+public:
+	RollState() : _count(0) {}
+	~RollState() {}
+	void handleInput(Player* player, ControllerManager* controller) override;
+	void update(Player* player) override;
+	void render(Player* player, SDL_Renderer* renderer) override;
+	static PlayerState* instance() {
+		static RollState inst;
+		return &inst;
+	}
+private:
+	int _count;
+};
+
+class JumpingState : public PlayerState
+{
+public:
+	~JumpingState() {}
+	void handleInput(Player* player, ControllerManager* controller) override;
+	void update(Player* player) override;
+	void render(Player* player, SDL_Renderer* renderer) override;
+	static PlayerState* instance() {
+		static JumpingState inst;
+		return &inst;
+	}
+};
+
+
+
 class Player : public GameObject, public Collider
 {
 public:
@@ -22,7 +102,6 @@ public:
 
 		direction(DOWN),
 		frameNum(0),
-		state(STATE_IDLE),
 
 		verticalVelocity(0),
 		HorizontalVelocity(0),
@@ -30,7 +109,8 @@ public:
 
 		speed(0.25),
 		scale(scale),
-		animationDelay(3)
+		animationDelay(3),
+		_state(IdleState::instance())
 	{
 	}
 	~Player() {}
@@ -43,21 +123,14 @@ public:
 
 	void handleInput(ControllerManager* CM) override;
 
-private:
-	enum PlayerDirection {
-		DOWN,
-		LEFT,
-		UP,
-		RIGHT,
-		NUMBER_OF_DIRECTIONS
-	};
-	enum PlayerState {
-		STATE_WALKING,
-		STATE_IDLE,
-		STATE_JUMPING,
+	void changeState(PlayerState* state) {
+		_state = state;
+	}
 
-		NUMBER_OF_STATES
-	};
+private:
+	friend class WalkingState;
+	friend class IdleState;
+	friend class RollState;
 
 	SDL_Texture* texture;
 
@@ -66,9 +139,11 @@ private:
 	SDL_Rect walkingDownSprites[10];
 	SDL_Rect walkingLeftSprites[10];
 	SDL_Rect walkingUpSprites[10];
+	SDL_Rect rollingDownSprites[10];
+	SDL_Rect rollingLeftSprites[10];
+	SDL_Rect rollingUpSprites[10];
 	int frameNum;
 
-	PlayerState state;
 	PlayerDirection direction;
 
 	// movement variables
@@ -78,11 +153,18 @@ private:
 	bool moveBools[NUMBER_OF_DIRECTIONS] = { false };
 
 	// constants
-	double const speed;
+	double speed;
 	int const scale;
 	int const animationDelay;
 
+	// states
+	PlayerState* _state;
+
 };
+
+
+
+
 
 
 #endif /* PLAYER_H_ */
