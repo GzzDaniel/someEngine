@@ -28,6 +28,7 @@ public:
 	virtual void handleInput(Player* player, ControllerManager* controller) {}
 	virtual void update(Player* player) {}
 	virtual void render(Player* player, SDL_Renderer* renderer) {}
+	virtual std::string getName() = 0;
 protected:
 	void changeState(Player* player, PlayerState* state);
 };
@@ -43,6 +44,8 @@ public:
 		static IdleState inst;
 		return &inst;
 	}
+	std::string getName() { return "Idle"; }
+
 
 };
 
@@ -57,6 +60,7 @@ public:
 		static WalkingState inst;
 		return &inst;
 	}
+	std::string getName() { return "walking"; }
 
 };
 
@@ -72,6 +76,7 @@ public:
 		static RollState inst;
 		return &inst;
 	}
+	std::string getName() { return "roll"; }
 private:
 	int _count;
 };
@@ -87,6 +92,7 @@ public:
 		static JumpingState inst;
 		return &inst;
 	}
+	std::string getName() { return "jumping"; }
 };
 
 
@@ -109,7 +115,7 @@ public:
 
 		speed(0.25),
 		scale(scale),
-		animationDelay(3),
+		animationDelay(4),
 		_state(IdleState::instance())
 	{
 	}
@@ -125,6 +131,9 @@ public:
 
 	void changeState(PlayerState* state) {
 		_state = state;
+	}
+	PlayerState* getState() {
+		return _state;
 	}
 
 private:

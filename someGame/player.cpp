@@ -2,11 +2,13 @@
 
 void PlayerState::changeState(Player* player, PlayerState* state) 
 {
+	std::cout << "changed states from " << player->getState()->getName() << " to " << state->getName() << "\n";
 	player->changeState(state);
 }
 
 void IdleState::handleInput(Player* player, ControllerManager* controller)  
 {
+
 	switch (controller->getFirstDpress())
 	{
 	case KEY_PRESS_UP:
@@ -14,9 +16,13 @@ void IdleState::handleInput(Player* player, ControllerManager* controller)
 	case KEY_PRESS_LEFT:
 	case KEY_PRESS_RIGHT:
 		// updated right away for responsiveness
-		WalkingState::instance()->handleInput(player, controller);
-		changeState(player, WalkingState::instance());
+		//WalkingState::instance()->handleInput(player, controller);
+			changeState(player, WalkingState::instance());
+
 	}
+
+	
+
 }
 void IdleState::update(Player* player)  
 {
@@ -24,11 +30,11 @@ void IdleState::update(Player* player)
 }
 void IdleState::render(Player* player, SDL_Renderer* renderer)
 {
+
 	//TODO idle animation
 	SDL_Rect dstQuad = { (int)player->getxPos(), (int)player->getyPos(), 18 * player->scale, 23 * player->scale };
 
 	if (player->direction == RIGHT) {
-
 		SDL_RenderCopyEx(renderer, player->texture, &player->standingSprites[LEFT], &dstQuad, 0, NULL, SDL_FLIP_HORIZONTAL);
 	}
 
@@ -40,15 +46,6 @@ void IdleState::render(Player* player, SDL_Renderer* renderer)
 // TODO give variables to WalkingState Class and make it legible
 void WalkingState::handleInput(Player* player, ControllerManager* controller)  
 {
-
-	switch (controller->getLastKeyEvent())
-	{
-	case KEY_PRESS_SHIFT:
-		player->speed *= 3;
-		changeState(player, RollState::instance());
-		return;
-	}
-
 	player->moveBools[RIGHT] = false;
 	player->moveBools[LEFT] = false;
 	player->moveBools[UP] = false;
@@ -91,6 +88,16 @@ void WalkingState::handleInput(Player* player, ControllerManager* controller)
 		player->moveBools[RIGHT] = true;
 		break;
 	}
+	switch (controller->getLastKeyEvent())
+	{
+	case KEY_PRESS_SHIFT:
+		std::cout << "increased speed, changed states\n";
+		player->frameNum = 0;
+		player->speed *= 1.5;
+		changeState(player, RollState::instance());
+
+	}
+
 }
 void WalkingState::update(Player* player)  
 {
@@ -156,19 +163,37 @@ void RollState::handleInput(Player* player, ControllerManager* controller)
 }
 void RollState::update(Player* player)  
 {
-
-	if (_count > 120) {
-		_count = 0;
-		player->speed = 0.25;
-		changeState(player, WalkingState::instance());
-	}
-
 	player->move(player->HorizontalVelocity * player->speed * player->diagonalFactor, player->verticalVelocity * player->speed * player->diagonalFactor);
-	_count++;
+	player->setColliderCenter((int)(player->getxPos() + 17 * player->scale / 2), (int)(player->getyPos() + 23 * player->scale / 2));
 }
 void RollState::render(Player* player, SDL_Renderer* renderer)
 {
+	SDL_Rect dstQuad = { (int)player->getxPos(), (int)player->getyPos(), 18 * player->scale, 23 * player->scale };
 
+	switch (player->direction)
+	{
+	case DOWN:
+		SDL_RenderCopyEx(renderer, player->texture, &player->rollingDownSprites[player->frameNum / player->animationDelay], &dstQuad, 0, NULL, SDL_FLIP_NONE);
+		break;
+	case LEFT:
+		SDL_RenderCopyEx(renderer, player->texture, &player->rollingLeftSprites[player->frameNum / player->animationDelay], &dstQuad, 0, NULL, SDL_FLIP_NONE);
+		break;
+	case RIGHT:
+		SDL_RenderCopyEx(renderer, player->texture, &player->rollingLeftSprites[player->frameNum / player->animationDelay], &dstQuad, 0, NULL, SDL_FLIP_HORIZONTAL);
+		break;
+	case UP:
+		SDL_RenderCopyEx(renderer, player->texture, &player->rollingUpSprites[player->frameNum / player->animationDelay], &dstQuad, 0, NULL, SDL_FLIP_NONE);
+		break;
+	}
+
+	// end at 8th frame
+	player->frameNum++;
+	if (player->frameNum / player->animationDelay >= 8) {
+		player->frameNum = 0;
+		player->speed = 0.25;
+		changeState(player, WalkingState::instance());
+	}
+	player->drawCollisionBox(renderer);
 }
 
 void JumpingState::handleInput(Player* player, ControllerManager* controller)
@@ -182,9 +207,6 @@ void JumpingState::render(Player* player, SDL_Renderer* renderer)
 {
 
 }
-
-
-
 
 
 
@@ -206,6 +228,7 @@ void Player::loadmedia(SDL_Renderer* _renderer)
 	SDL_FreeSurface(loadedSurface);
 
 	standingSprites[DOWN] = { 15, 9, 19, 23 };
+	//standingSprites[DOWN] = { 327 -33, 1102, 19, 23 };
 	standingSprites[LEFT] = { 48, 9, 19, 23 };
 	standingSprites[UP] = { 79, 9, 19, 23 };
 
@@ -246,7 +269,33 @@ void Player::loadmedia(SDL_Renderer* _renderer)
 	walkingUpSprites[8] = { startUp + 32 * 8, 77, 19, 23 };
 	walkingUpSprites[9] = { startUp + 32 * 9, 77, 19, 23 };
 
+	rollingDownSprites[0] = { 19, 1102, 19, 23 };
+	rollingDownSprites[1] = { 19 + 32, 1102, 19, 23 };
+	rollingDownSprites[2] = { 19 + 32 * 2, 1102, 19, 23 };
+	rollingDownSprites[3] = { 19 + 32 * 3, 1102, 19, 23 };
+	rollingDownSprites[4] = { 19 + 32 * 4, 1102, 19, 23 };
+	rollingDownSprites[5] = { 19 + 32 * 5, 1102, 19, 23 };
+	rollingDownSprites[6] = { 19 - 4 + 32 * 6, 1102 + 2, 19, 23 };;
+	rollingDownSprites[7] = { 19-4+32*7, 1102+3, 19, 23 };
 
+	rollingLeftSprites[0] = { 327 - 33, 1102, 19, 23 };
+	rollingLeftSprites[1] = { 327 + 32 * 0, 1100, 19, 23 };
+	rollingLeftSprites[2] = { 328 + 32 * 1, 1100, 19, 23 };
+	rollingLeftSprites[3] = { 323 + 32 * 2, 1102, 19, 23 };
+	rollingLeftSprites[4] = { 326 + 32 * 3, 1101, 19, 23 };
+	rollingLeftSprites[5] = { 326 + 32 * 4, 1101, 19, 23 };
+	rollingLeftSprites[6] = { 326 + 32 * 5, 1105, 19, 23 };
+	rollingLeftSprites[7] = { startLeft - 2 + 32 * 9, 77, 19, 23 };
+
+
+	rollingUpSprites[0] = { 539 + 32 * 0, 1104, 19, 23 };
+	rollingUpSprites[1] = { 539 + 32 * 1, 1104, 19, 23 };
+	rollingUpSprites[2] = { 539 + 32 * 2, 1104, 19, 23 };
+	rollingUpSprites[3] = { 539 + 32 * 3, 1104, 19, 23 };
+	rollingUpSprites[4] = { 539 + 32 * 4, 1104, 19, 23 };
+	rollingUpSprites[5] = { 539 + 32 * 5, 1104, 19, 23 };
+	rollingUpSprites[6] = { 539 - 4 + 32 * 6, 1104, 19, 23 };
+	rollingUpSprites[7] = { 539 - 4 + 32 * 7, 1104, 19, 23 };
 }
 
 
@@ -262,79 +311,7 @@ void Player::render(SDL_Renderer* _renderer)
 {
 	_state->render(this, _renderer);
 }
-//void Player::handleInput(ControllerManager* controller)
-//{
-//	moveBools[RIGHT] = false;
-//	moveBools[LEFT] = false;
-//	moveBools[UP] = false;
-//	moveBools[DOWN] = false;
-//
-//	switch (controller->getFirstDpress())
-//	{
-//	case KEY_PRESS_UP:
-//		direction = UP;
-//		moveBools[UP] = true;
-//		break;
-//	case KEY_PRESS_DOWN:
-//		direction = DOWN;
-//		moveBools[DOWN] = true;
-//		break;
-//	case KEY_PRESS_LEFT:
-//		direction = LEFT;
-//		moveBools[LEFT] = true;
-//		break;
-//	case KEY_PRESS_RIGHT:
-//		direction = RIGHT;
-//		moveBools[RIGHT] = true;
-//		break;
-//	default:
-//	}
-//	switch (controller->getSecondDpress())
-//	{
-//	case KEY_PRESS_UP:
-//		moveBools[UP] = true;
-//		break;
-//	case KEY_PRESS_DOWN:
-//		moveBools[DOWN] = true;
-//		break;
-//	case KEY_PRESS_LEFT:
-//		moveBools[LEFT] = true;
-//		break;
-//	case KEY_PRESS_RIGHT:
-//		moveBools[RIGHT] = true;
-//		break;
-//	}
-//}
-//void Player::update()
-//{
-//	// TODO Dynamic and Static classes, or maybe only dynamic bc it adds move functiuons based on velocity. it will store the
-//	// Velocity variables
-//	verticalVelocity = 0;
-//	HorizontalVelocity = 0;
-//	diagonalFactor = 1;
-//
-//	if (moveBools[UP]) {
-//		verticalVelocity -= 1;
-//	}
-//	else if (moveBools[DOWN]) {
-//		verticalVelocity += 1;
-//	}
-//	if (moveBools[RIGHT]) {
-//		HorizontalVelocity += 1;
-//	}
-//	else if (moveBools[LEFT]) {
-//		HorizontalVelocity -= 1;
-//	}
-//	if (HorizontalVelocity != 0 && verticalVelocity != 0) {
-//		// used to normalize diagonal movement. otherwise diagonal movement f e e l s slightly faster
-//		diagonalFactor = 0.7071067811865476;
-//	}
-//
-//	move(HorizontalVelocity * speed * diagonalFactor, verticalVelocity * speed * diagonalFactor);
-//
-//	// adjusts the collider to the sprite. link's sprite specifically
-//	setColliderCenter((int)(getxPos() + 17 * scale / 2), (int)(getyPos() + 23 * scale / 2));
-//}
+
 void Player::onCollision(Collider* other)
 {
 	if (other->getType() == TYPE_WALL)
@@ -374,44 +351,3 @@ void Player::onCollision(Collider* other)
 		}
 	}
 }
-//void Player::render(SDL_Renderer* _renderer)
-//{
-//	SDL_Rect dstQuad = { (int)getxPos(), (int)getyPos(), 18 * scale, 23 * scale };
-//
-//	if (state == STATE_IDLE)
-//	{
-//		frameNum = 0;
-//
-//		if (direction == RIGHT) {
-//
-//			SDL_RenderCopyEx(_renderer, texture, &standingSprites[LEFT], &dstQuad, 0, NULL, SDL_FLIP_HORIZONTAL);
-//		}
-//
-//		SDL_RenderCopyEx(_renderer, texture, &standingSprites[direction], &dstQuad, 0, NULL, SDL_FLIP_NONE);
-//	}
-//	if (state == STATE_WALKING)
-//		//state == STATE_WALKING
-//	{
-//		switch (direction) {
-//		case DOWN:
-//			SDL_RenderCopyEx(_renderer, texture, &walkingDownSprites[frameNum / animationDelay], &dstQuad, 0, NULL, SDL_FLIP_NONE);
-//			break;
-//		case LEFT:
-//			SDL_RenderCopyEx(_renderer, texture, &walkingLeftSprites[frameNum / animationDelay], &dstQuad, 0, NULL, SDL_FLIP_NONE);
-//			break;
-//		case RIGHT:
-//			SDL_RenderCopyEx(_renderer, texture, &walkingLeftSprites[frameNum / animationDelay], &dstQuad, 0, NULL, SDL_FLIP_HORIZONTAL);
-//			break;
-//		case UP:
-//			SDL_RenderCopyEx(_renderer, texture, &walkingUpSprites[frameNum / animationDelay], &dstQuad, 0, NULL, SDL_FLIP_NONE);
-//			break;
-//		}
-//
-//		frameNum++;
-//		if (frameNum / animationDelay >= 10) {
-//			frameNum = 0;
-//		}
-//	}
-//
-//	drawCollisionBox(_renderer);
-//}
