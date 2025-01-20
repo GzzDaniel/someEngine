@@ -75,7 +75,15 @@ public:
 	~Obstacle() {}
 	void update() override {drawCollisionBox(_renderer); }
 };
-
+class Background : public SpriteRenderer
+{
+public:
+	Background() : SpriteRenderer(0, 0, 640, 480, 1) { loadmedia(_renderer, "225817.png"); }
+	~Background() {}
+	void render(SDL_Renderer* _renderer) override {
+		SDL_RenderCopy(_renderer, getTexture(), 0, 0);
+	}
+};
 
 class Subject
 {
@@ -83,17 +91,23 @@ protected:
 	GameObject* inputobserverArray[5] = { 0 };
 	GameObject* observerArray[5] = { 0 };
 	Collider* collidersArray[5] = { 0 };
+	SpriteRenderer* rendersArray[5] = { 0 };
+	int numRenderedObservers;
 	int numInputObservers;
 	int numObservers;
 	int numColliderObservers;
 
 public:
-	Subject() : numInputObservers(0), numObservers(0), numColliderObservers(0) { }
+	Subject() : numRenderedObservers(0), numInputObservers(0), numObservers(0), numColliderObservers(0)  { }
 	virtual ~Subject() {}
 
 	void addObserver(GameObject* _observer) {
 		observerArray[numObservers] = _observer;
 		numObservers++;
+	}
+	void addRenderedObserver(SpriteRenderer* _observer) {
+		rendersArray[numRenderedObservers] = _observer;
+		numRenderedObservers++;
 	}
 	void addInputObserver(GameObject* _observer) {
 		inputobserverArray[numInputObservers] = _observer;
@@ -133,12 +147,14 @@ public:
 				if (accumulator < 0) accumulator = 0;
 			}
 			display();
+			
 		}
 	}
 	
 	ControllerManager _controllerManager;
 
 private:
+
 	
 	void handleInput(ControllerManager* CMP) {
 		for (int i = 0; i < numInputObservers; i++) {
@@ -225,7 +241,7 @@ private:
 		// TODO use a smarter implementation for checking collisions
 		for (int i = 0; i < numColliderObservers; i++)
 		{
-			for (int j = 0; j < numColliderObservers; j++) {
+			for (int j = i; j < numColliderObservers; j++) {
 				if (i != j) {
 					if (collidersArray[i]->isColliding(collidersArray[j])) {
 						collidersArray[i]->onCollision(collidersArray[j]);
@@ -237,10 +253,10 @@ private:
 	}
 	void display() 
 	{
-		// renders all gameObjects and then switches buffers
-		for (int i = 0; i < numObservers; i++) {
 
-			observerArray[i]->render(_renderer);
+		// renders all gameObjects and then switches buffers
+		for (int i = 0; i < numRenderedObservers; i++) {
+			rendersArray[i]->render(_renderer);
 		}
 		//Update screen
 		SDL_RenderPresent(_renderer);

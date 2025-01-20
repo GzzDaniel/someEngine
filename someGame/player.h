@@ -46,6 +46,8 @@ public:
 	}
 	std::string getName() { return "Idle"; }
 
+private:
+	bool shiftPressed;
 
 };
 
@@ -97,14 +99,15 @@ public:
 
 
 
-class Player : public GameObject, public Collider
+class Player : public GameObject, public Collider, public SpriteRenderer
 {
 public:
 
 	Player(int posx, int posy, int scale) :
 		GameObject(posx, posy),
 		Collider(posx + 17 * scale / 2, posy + 23 * scale / 2, 30, 53, TYPE_PLAYER),
-		texture(NULL),
+		SpriteRenderer(posx, posy, 18, 23, scale),
+		scale(scale),
 
 		direction(DOWN),
 		frameNum(0),
@@ -114,20 +117,23 @@ public:
 		diagonalFactor(1),
 
 		speed(0.25),
-		scale(scale),
-		animationDelay(4),
+		animationDelay(3),
+
 		_state(IdleState::instance())
 	{
 	}
-	~Player() {}
+	~Player() { }
 
-	void loadmedia(SDL_Renderer* _renderer);
+	
 	void render(SDL_Renderer* _renderer) override;
+
 	void update() override;
 	void onCollision(Collider* other) override;
 	//void onNotify(Event _event) override;
 
 	void handleInput(ControllerManager* CM) override;
+
+	void defineSprites() override;
 
 	void changeState(PlayerState* state) {
 		_state = state;
@@ -141,7 +147,7 @@ private:
 	friend class IdleState;
 	friend class RollState;
 
-	SDL_Texture* texture;
+	int scale;
 
 	// animation dimentions
 	SDL_Rect standingSprites[NUMBER_OF_DIRECTIONS];
@@ -163,7 +169,7 @@ private:
 
 	// constants
 	double speed;
-	int const scale;
+	//int const scale;
 	int const animationDelay;
 
 	// states

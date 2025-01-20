@@ -20,6 +20,39 @@ double GameObject::getyPos() {
 }
 
 
+void SpriteRenderer::loadmedia(SDL_Renderer* _renderer, std::string path)
+{
+	SDL_Surface* loadedSurface = NULL;
+	loadedSurface = IMG_Load(path.c_str());
+
+	if (loadedSurface == NULL) {
+		std::cout << " failed to load image " << IMG_GetError();
+	}
+
+	//SDL_SetColorKey(loadedSurface, SDL_TRUE, SDL_MapRGB(loadedSurface->format, 0, 0xFF, 0xFF));
+	texture = SDL_CreateTextureFromSurface(_renderer, loadedSurface);
+	if (texture == NULL)
+	{
+		std::cout << " failed to make texture " << IMG_GetError();
+	}
+	SDL_FreeSurface(loadedSurface);
+
+	defineSprites();
+}
+void SpriteRenderer::moveSprite(double x, double y)
+{
+	xPos += x;
+	yPos += y;
+}
+void SpriteRenderer::renderSprite(SDL_Renderer* renderer, SDL_Rect* spriteQuad, SDL_RendererFlip flip) 
+{
+	dstQuad = { (int)xPos, (int)yPos, width * scale, height * scale };
+	
+	SDL_RenderCopyEx(renderer, texture, spriteQuad, &dstQuad, 0, NULL, flip);
+}
+
+
+
 bool Collider::isverticalColliding(Collider* c)
 {
 	return std::abs(this->centerx - c->centerx) < (this->halfWidth + c->halfWidth);

@@ -25,10 +25,10 @@ public:
 	void virtual setxPos(double inxpos);
 	void virtual setyPos(double inypos);
 	void virtual move(double inxmove, double inymove);
-
+	
 	void virtual handleInput(ControllerManager* CM) {}
 	void virtual update() = 0;
-	void virtual render(SDL_Renderer* _renderer) {}
+	
 	void virtual onNotify(Event _event) {};
 
 	double virtual getxPos();
@@ -38,6 +38,55 @@ private:
 	double xpos;
 	double ypos;
 };
+
+
+
+class SpriteRenderer
+{
+public:
+	SpriteRenderer(double x, double y, int w, int h, int scale) :
+		texture(NULL),
+		xPos(x),
+		yPos(y),
+		width(w),
+		height(h),
+		scale(scale),
+		dstQuad({ (int)xPos, (int)yPos, width * scale, height * scale })
+	{}
+	virtual ~SpriteRenderer() {}
+
+	void moveSprite(double x, double y);
+
+	// define the quads for each sprite
+	void virtual defineSprites() {}
+
+	void loadmedia(SDL_Renderer* _renderer, std::string path);
+
+	// calculates the quad renders a copy
+	void renderSprite(SDL_Renderer* renderer, SDL_Rect* spriteQuad, SDL_RendererFlip flip);
+
+	// render logic at each frame
+	void virtual render(SDL_Renderer* renderer) = 0;
+
+	SDL_Texture* getTexture() {
+		return texture;
+	}
+private:
+	double xPos;
+	double yPos;
+
+	int width;
+	int height;
+
+	int scale;
+
+	SDL_Texture* texture;
+
+	SDL_Rect dstQuad;
+
+};
+
+
 
 enum CollisionType {
 	TYPE_PLAYER,
@@ -62,7 +111,7 @@ public:
 		prevCenterx(centerx),
 		prevCentery(centery)
 	{}
-	~Collider() {}
+	virtual ~Collider() {}
 
 	// returns true if the object is colliding with the specified object
 	bool isColliding(Collider* c);
@@ -72,6 +121,12 @@ public:
 
 	// places the center at specified position
 	void setColliderCenter(int x, int y);
+
+	// move the collider by specified difference
+	void moveCollider(int dx, int dy) {
+		centerx += dx;
+		centery += dy;
+	}
 
 	// returns the collider type
 	CollisionType getType();

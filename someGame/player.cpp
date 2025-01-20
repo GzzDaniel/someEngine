@@ -8,21 +8,14 @@ void PlayerState::changeState(Player* player, PlayerState* state)
 
 void IdleState::handleInput(Player* player, ControllerManager* controller)  
 {
-
-	switch (controller->getFirstDpress())
-	{
-	case KEY_PRESS_UP:
-	case KEY_PRESS_DOWN:
-	case KEY_PRESS_LEFT:
-	case KEY_PRESS_RIGHT:
-		// updated right away for responsiveness
-		//WalkingState::instance()->handleInput(player, controller);
+	if(controller->getFirstDpress() != KEY_PRESS_NULL){
+		if (shiftPressed) {
+			changeState(player, RollState::instance());
+		}
+		else {
 			changeState(player, WalkingState::instance());
-
+		}
 	}
-
-	
-
 }
 void IdleState::update(Player* player)  
 {
@@ -30,16 +23,14 @@ void IdleState::update(Player* player)
 }
 void IdleState::render(Player* player, SDL_Renderer* renderer)
 {
-
+	shiftPressed = false;
 	//TODO idle animation
-	SDL_Rect dstQuad = { (int)player->getxPos(), (int)player->getyPos(), 18 * player->scale, 23 * player->scale };
-
 	if (player->direction == RIGHT) {
-		SDL_RenderCopyEx(renderer, player->texture, &player->standingSprites[LEFT], &dstQuad, 0, NULL, SDL_FLIP_HORIZONTAL);
+		
+		player->renderSprite(renderer, &player->standingSprites[LEFT], SDL_FLIP_HORIZONTAL);
 	}
-
-	SDL_RenderCopyEx(renderer, player->texture, &player->standingSprites[player->direction], &dstQuad, 0, NULL, SDL_FLIP_NONE);
 	
+	player->renderSprite(renderer, &player->standingSprites[player->direction], SDL_FLIP_NONE);
 	player->drawCollisionBox(renderer);
 }
 
@@ -93,9 +84,8 @@ void WalkingState::handleInput(Player* player, ControllerManager* controller)
 	case KEY_PRESS_SHIFT:
 		std::cout << "increased speed, changed states\n";
 		player->frameNum = 0;
-		player->speed *= 1.5;
+		player->speed *= 2;
 		changeState(player, RollState::instance());
-
 	}
 
 }
@@ -124,28 +114,32 @@ void WalkingState::update(Player* player)
 		player->diagonalFactor = 0.7071067811865476;
 	}
 
-	player->move(player->HorizontalVelocity * player->speed * player->diagonalFactor, player->verticalVelocity * player->speed * player->diagonalFactor);
-
+	double dx = (player->HorizontalVelocity * player->speed * player->diagonalFactor);
+	double dy = (player->verticalVelocity * player->speed * player->diagonalFactor);
+	
+	player->move(dx, dy);
+	player->moveSprite(dx, dy);
+	//player->moveCollider(dx, dy);
 	// adjusts the collider to the sprite. link's sprite specifically
-	player->setColliderCenter((int)(player->getxPos() + 17 * player->scale / 2), (int)(player->getyPos() + 23 * player->scale / 2));
+
+	player->setColliderCenter((int)(player->getxPos() + 17 ), (int)(player->getyPos() + 23));
+	//std::cout << player->getCenterx() << ", " << player->getCentery() << "\n";
 }
 void WalkingState::render(Player* player, SDL_Renderer* renderer)
 {
-	SDL_Rect dstQuad = { (int)player->getxPos(), (int)player->getyPos(), 18 * player->scale, 23 * player->scale };
-
 	switch (player->direction) 
 	{
 	case DOWN:
-		SDL_RenderCopyEx(renderer, player->texture, &player->walkingDownSprites[player->frameNum / player->animationDelay], &dstQuad, 0, NULL, SDL_FLIP_NONE);
+		player->renderSprite(renderer, &player->walkingDownSprites[player->frameNum / player->animationDelay], SDL_FLIP_NONE);
 		break;
 	case LEFT:
-		SDL_RenderCopyEx(renderer, player->texture, &player->walkingLeftSprites[player->frameNum / player->animationDelay], &dstQuad, 0, NULL, SDL_FLIP_NONE);
+		player->renderSprite(renderer, &player->walkingLeftSprites[player->frameNum / player->animationDelay], SDL_FLIP_NONE);
 		break;
 	case RIGHT:
-		SDL_RenderCopyEx(renderer, player->texture, &player->walkingLeftSprites[player->frameNum / player->animationDelay], &dstQuad, 0, NULL, SDL_FLIP_HORIZONTAL);
+		player->renderSprite(renderer, &player->walkingLeftSprites[player->frameNum / player->animationDelay], SDL_FLIP_HORIZONTAL);
 		break;
 	case UP:
-		SDL_RenderCopyEx(renderer, player->texture, &player->walkingUpSprites[player->frameNum / player->animationDelay], &dstQuad, 0, NULL, SDL_FLIP_NONE);
+		player->renderSprite(renderer, &player->walkingUpSprites[player->frameNum / player->animationDelay], SDL_FLIP_NONE);
 		break;
 	}
 
@@ -164,25 +158,26 @@ void RollState::handleInput(Player* player, ControllerManager* controller)
 void RollState::update(Player* player)  
 {
 	player->move(player->HorizontalVelocity * player->speed * player->diagonalFactor, player->verticalVelocity * player->speed * player->diagonalFactor);
+	player->moveSprite(player->HorizontalVelocity * player->speed * player->diagonalFactor, player->verticalVelocity * player->speed * player->diagonalFactor);
+	//player->moveCollider(player->HorizontalVelocity * player->speed * player->diagonalFactor, player->verticalVelocity * player->speed * player->diagonalFactor);
+
 	player->setColliderCenter((int)(player->getxPos() + 17 * player->scale / 2), (int)(player->getyPos() + 23 * player->scale / 2));
 }
 void RollState::render(Player* player, SDL_Renderer* renderer)
 {
-	SDL_Rect dstQuad = { (int)player->getxPos(), (int)player->getyPos(), 18 * player->scale, 23 * player->scale };
-
 	switch (player->direction)
 	{
 	case DOWN:
-		SDL_RenderCopyEx(renderer, player->texture, &player->rollingDownSprites[player->frameNum / player->animationDelay], &dstQuad, 0, NULL, SDL_FLIP_NONE);
+		player->renderSprite(renderer, &player->rollingDownSprites[player->frameNum / player->animationDelay], SDL_FLIP_NONE);
 		break;
 	case LEFT:
-		SDL_RenderCopyEx(renderer, player->texture, &player->rollingLeftSprites[player->frameNum / player->animationDelay], &dstQuad, 0, NULL, SDL_FLIP_NONE);
+		player->renderSprite(renderer, &player->rollingLeftSprites[player->frameNum / player->animationDelay], SDL_FLIP_NONE);
 		break;
 	case RIGHT:
-		SDL_RenderCopyEx(renderer, player->texture, &player->rollingLeftSprites[player->frameNum / player->animationDelay], &dstQuad, 0, NULL, SDL_FLIP_HORIZONTAL);
+		player->renderSprite(renderer, &player->rollingLeftSprites[player->frameNum / player->animationDelay], SDL_FLIP_HORIZONTAL);
 		break;
 	case UP:
-		SDL_RenderCopyEx(renderer, player->texture, &player->rollingUpSprites[player->frameNum / player->animationDelay], &dstQuad, 0, NULL, SDL_FLIP_NONE);
+		player->renderSprite(renderer, &player->rollingUpSprites[player->frameNum / player->animationDelay], SDL_FLIP_NONE);
 		break;
 	}
 
@@ -209,24 +204,8 @@ void JumpingState::render(Player* player, SDL_Renderer* renderer)
 }
 
 
-
-
-void Player::loadmedia(SDL_Renderer* _renderer)
+void Player::defineSprites()
 {
-	SDL_Surface* loadedSurface = IMG_Load("link.png");
-
-	if (loadedSurface == NULL) {
-		std::cout << " failed to load image " << IMG_GetError();
-	}
-
-	//SDL_SetColorKey(loadedSurface, SDL_TRUE, SDL_MapRGB(loadedSurface->format, 0, 0xFF, 0xFF));
-	texture = SDL_CreateTextureFromSurface(_renderer, loadedSurface);
-	if (texture == NULL)
-	{
-		std::cout << " failed to make texture " << IMG_GetError();
-	}
-	SDL_FreeSurface(loadedSurface);
-
 	standingSprites[DOWN] = { 15, 9, 19, 23 };
 	//standingSprites[DOWN] = { 327 -33, 1102, 19, 23 };
 	standingSprites[LEFT] = { 48, 9, 19, 23 };
@@ -314,6 +293,7 @@ void Player::render(SDL_Renderer* _renderer)
 
 void Player::onCollision(Collider* other)
 {
+	//std::cout << "before " << getCenterx() << ", " << getCentery() << " center diff " << std::abs(this->getCentery() - other->getCentery()) <<  " height diff " << this->getHalfHeight() +other->getHalfHeight() <<"\n";
 	if (other->getType() == TYPE_WALL)
 	{
 		// get difference in positions to make calculations easier
@@ -329,10 +309,15 @@ void Player::onCollision(Collider* other)
 			if (verticalVelocity < 0) {
 				// bottom up
 				setColliderCenter(getCenterx(), other->getCentery() + other->getHalfHeight() + getHalfHeight());
+				while (isColliding(other)) moveCollider(0, 1);
 			}
 			else if (verticalVelocity > 0) {
 				// up to bottom
-				setColliderCenter(getCenterx(), other->getCentery() - other->getHalfHeight() - getHalfHeight()-1);
+				setColliderCenter(getCenterx(), other->getCentery() - other->getHalfHeight() - getHalfHeight());
+				while (isColliding(other)) {
+					moveCollider(0, -1);
+
+				}
 			}
 			setyPos(getCentery() - ydif);
 			break;
@@ -341,13 +326,18 @@ void Player::onCollision(Collider* other)
 			if (HorizontalVelocity < 0) {
 				// right to left
 				setColliderCenter(other->getCenterx() + other->getHalfWidth() + getHalfWidth(), getCentery());
+				while (isColliding(other)) moveCollider(1, 0);
 			}
 			else if (HorizontalVelocity > 0) {
 				// left to right
-				setColliderCenter(other->getCenterx() - other->getHalfWidth() - getHalfWidth()-1, getCentery());
+				setColliderCenter(other->getCenterx() - other->getHalfWidth() - getHalfWidth(), getCentery());
+				while (isColliding(other)) moveCollider(-1, 0);
 			}
 			setxPos(getCenterx() - xdif);
+			
+			
 			break;
 		}
 	}
+	//std::cout << "after " << getCenterx() << ", " << getCentery() << " center diff " << std::abs(this->getCentery() - other->getCentery()) << " height diff " << this->getHalfHeight() + other->getHalfHeight() << "\n";
 }
