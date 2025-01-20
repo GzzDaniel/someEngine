@@ -204,7 +204,7 @@ void JumpingState::render(Player* player, SDL_Renderer* renderer)
 }
 
 
-void Player::defineSprites()
+void Player::defineSrcSprites()
 {
 	standingSprites[DOWN] = { 15, 9, 19, 23 };
 	//standingSprites[DOWN] = { 327 -33, 1102, 19, 23 };
@@ -288,6 +288,7 @@ void Player::update()
 }
 void Player::render(SDL_Renderer* _renderer)
 {
+	//std::cout << getxPos() << " " << getyPos() << " | " << getCenterx() << " " << getCentery() << " | " << getSpritePosx() << " " << getSpritePosy() << "\n";
 	_state->render(this, _renderer);
 }
 
@@ -299,8 +300,8 @@ void Player::onCollision(Collider* other)
 		// get difference in positions to make calculations easier
 		// TODO set position based on the center with one line only
 		// or TODO set position based on the difference in distance that the collider got into the other collider
-		int xdif = getCenterx() - getxPos();
-		int ydif = getCentery() - getyPos();
+		int xdif = (int)(getCenterx() - getxPos());
+		int ydif = (int)(getCentery() - getyPos());
 
 		switch (getPrevCollision(other))
 		{

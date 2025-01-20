@@ -11,6 +11,7 @@
 #include "gameObject.h"
 #include "controllermanager.h"
 #include "player.h"
+#include "SecondaryEntities.h"
 
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
@@ -65,25 +66,6 @@ void close() {
 	SDL_Quit();
 }
 
-
-class Obstacle : public GameObject, public Collider
-{
-public:
-	Obstacle(int x, int y):
-		GameObject(x, y), 
-		Collider(x, y, 100, 100, TYPE_WALL) {}
-	~Obstacle() {}
-	void update() override {drawCollisionBox(_renderer); }
-};
-class Background : public SpriteRenderer
-{
-public:
-	Background() : SpriteRenderer(0, 0, 640, 480, 1) { loadmedia(_renderer, "225817.png"); }
-	~Background() {}
-	void render(SDL_Renderer* _renderer) override {
-		SDL_RenderCopy(_renderer, getTexture(), 0, 0);
-	}
-};
 
 class Subject
 {
@@ -143,7 +125,7 @@ public:
 			while (accumulator > 1.0 / 61.0)
 			{	
 				update();
-				accumulator -= (1.0 / 59.0);
+				accumulator = accumulator - (1.0 / 59.0);
 				if (accumulator < 0) accumulator = 0;
 			}
 			display();

@@ -133,7 +133,7 @@ public:
 
 	void handleInput(ControllerManager* CM) override;
 
-	void defineSprites() override;
+	void defineSrcSprites() override;
 
 	void changeState(PlayerState* state) {
 		_state = state;

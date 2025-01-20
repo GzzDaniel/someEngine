@@ -137,12 +137,14 @@
     <ClCompile Include="gameObject.cpp" />
     <ClCompile Include="mainloop.cpp" />
     <ClCompile Include="player.cpp" />
+    <ClCompile Include="SecondaryEntities.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="controllermanager.h" />
     <ClInclude Include="gameObject.h" />
     <ClInclude Include="mainloop.h" />
     <ClInclude Include="player.h" />
+    <ClInclude Include="SecondaryEntities.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ClassDiagram.cd" />

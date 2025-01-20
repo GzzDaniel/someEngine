@@ -37,7 +37,7 @@ void SpriteRenderer::loadmedia(SDL_Renderer* _renderer, std::string path)
 	}
 	SDL_FreeSurface(loadedSurface);
 
-	defineSprites();
+	defineSrcSprites();
 }
 void SpriteRenderer::moveSprite(double x, double y)
 {
@@ -46,7 +46,7 @@ void SpriteRenderer::moveSprite(double x, double y)
 }
 void SpriteRenderer::renderSprite(SDL_Renderer* renderer, SDL_Rect* spriteQuad, SDL_RendererFlip flip) 
 {
-	dstQuad = { (int)xPos, (int)yPos, width * scale, height * scale };
+	dstQuad = { (int)xPos, (int)yPos, (int)(width * scale), (int)(height * scale) };
 	
 	SDL_RenderCopyEx(renderer, texture, spriteQuad, &dstQuad, 0, NULL, flip);
 }

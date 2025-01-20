@@ -44,21 +44,21 @@ private:
 class SpriteRenderer
 {
 public:
-	SpriteRenderer(double x, double y, int w, int h, int scale) :
+	SpriteRenderer(double x, double y, int w, int h, double scale) :
 		texture(NULL),
 		xPos(x),
 		yPos(y),
 		width(w),
 		height(h),
 		scale(scale),
-		dstQuad({ (int)xPos, (int)yPos, width * scale, height * scale })
+		dstQuad({ (int)xPos, (int)yPos, (int)(width * scale), (int)(height * scale) })
 	{}
 	virtual ~SpriteRenderer() {}
 
 	void moveSprite(double x, double y);
 
 	// define the quads for each sprite
-	void virtual defineSprites() {}
+	void virtual defineSrcSprites() {}
 
 	void loadmedia(SDL_Renderer* _renderer, std::string path);
 
@@ -71,6 +71,9 @@ public:
 	SDL_Texture* getTexture() {
 		return texture;
 	}
+	double getSpritePosx() { return xPos; }
+	double getSpritePosy() { return yPos; }
+
 private:
 	double xPos;
 	double yPos;
@@ -78,7 +81,7 @@ private:
 	int width;
 	int height;
 
-	int scale;
+	double scale;
 
 	SDL_Texture* texture;
 
