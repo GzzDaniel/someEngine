@@ -34,13 +34,19 @@ public:
 	double virtual getxPos();
 	double virtual getyPos();
 
+	void drawGOPoint(SDL_Renderer* renderer) {
+		SDL_SetRenderDrawColor(renderer, 0xFF, 0x00, 0x00, 0xFF);
+		SDL_RenderDrawPoint(renderer, (int)xpos, (int)ypos);
+	}
+
 private:
 	double xpos;
 	double ypos;
 };
 
 
-
+// stores the rendering of sprites values
+// TODO make a variable pointer for Renderer and avoid having to input it in every render function
 class SpriteRenderer
 {
 public:
@@ -73,6 +79,9 @@ public:
 	}
 	double getSpritePosx() { return xPos; }
 	double getSpritePosy() { return yPos; }
+	void setSpritePosx(double x) { xPos = x; }
+	void setSpritePosy(double y) { yPos = y; }
+
 
 private:
 	double xPos;
@@ -144,6 +153,8 @@ public:
 	int getHalfHeight() { return halfHeight; }
 	int getCenterx() { return centerx; }
 	int getCentery() { return centery; }
+	int getPrevCenterx() { return prevCenterx; }
+	int getPrevCentery() { return prevCentery; }
 
 private:
 

@@ -18,6 +18,13 @@ enum PlayerDirection {
 	NUMBER_OF_DIRECTIONS
 };
 
+enum PlayerStateID {
+	IDLE,
+	WALKING,
+	ROLLING,
+	JUMPING
+};
+
 // forward declare for the state classes
 class Player;
 
@@ -28,6 +35,7 @@ public:
 	virtual void handleInput(Player* player, ControllerManager* controller) {}
 	virtual void update(Player* player) {}
 	virtual void render(Player* player, SDL_Renderer* renderer) {}
+	virtual PlayerStateID getStateID() = 0;
 	virtual std::string getName() = 0;
 protected:
 	void changeState(Player* player, PlayerState* state);
@@ -44,6 +52,7 @@ public:
 		static IdleState inst;
 		return &inst;
 	}
+	PlayerStateID getStateID() override { return IDLE; }
 	std::string getName() { return "Idle"; }
 
 private:
@@ -62,6 +71,7 @@ public:
 		static WalkingState inst;
 		return &inst;
 	}
+	PlayerStateID getStateID() override { return WALKING; }
 	std::string getName() { return "walking"; }
 
 };
@@ -78,6 +88,7 @@ public:
 		static RollState inst;
 		return &inst;
 	}
+	PlayerStateID getStateID() override { return ROLLING; }
 	std::string getName() { return "roll"; }
 private:
 	int _count;
@@ -94,9 +105,9 @@ public:
 		static JumpingState inst;
 		return &inst;
 	}
+	PlayerStateID getStateID() override { return JUMPING; }
 	std::string getName() { return "jumping"; }
 };
-
 
 
 class Player : public GameObject, public Collider, public SpriteRenderer
@@ -116,7 +127,7 @@ public:
 		HorizontalVelocity(0),
 		diagonalFactor(1),
 
-		speed(0.25),
+		speed(0.18),
 		animationDelay(3),
 
 		_state(IdleState::instance())
@@ -146,6 +157,7 @@ private:
 	friend class WalkingState;
 	friend class IdleState;
 	friend class RollState;
+	friend class PlayerState;
 
 	int scale;
 

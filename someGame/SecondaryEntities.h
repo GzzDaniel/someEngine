@@ -35,10 +35,10 @@ private:
 class Background : public SpriteRenderer
 {
 public:
-	Background() : SpriteRenderer(0, 0, 6400, 4800, 1) { }
+	Background() : SpriteRenderer(0, 0, 900, 600, 1) { }
 	~Background() {}
 	void render(SDL_Renderer* _renderer) override {
-		SDL_RenderCopy(_renderer, getTexture(), 0, 0);
+		renderSprite(_renderer, 0, SDL_FLIP_NONE);
 	}
 };
 

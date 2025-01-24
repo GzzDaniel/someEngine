@@ -2,6 +2,19 @@
 
 void PlayerState::changeState(Player* player, PlayerState* state) 
 {
+	player->frameNum = 0;
+
+	// next state
+	if (state->getStateID() == ROLLING) {
+		std::cout << "increased speed, changed states\n";
+		player->speed *= 2;
+	}
+
+	// prev state
+	if (player->getState()->getStateID() == ROLLING) {
+		player->speed = 0.18;
+	}
+
 	std::cout << "changed states from " << player->getState()->getName() << " to " << state->getName() << "\n";
 	player->changeState(state);
 }
@@ -82,9 +95,7 @@ void WalkingState::handleInput(Player* player, ControllerManager* controller)
 	switch (controller->getLastKeyEvent())
 	{
 	case KEY_PRESS_SHIFT:
-		std::cout << "increased speed, changed states\n";
-		player->frameNum = 0;
-		player->speed *= 2;
+		
 		changeState(player, RollState::instance());
 	}
 
@@ -184,8 +195,6 @@ void RollState::render(Player* player, SDL_Renderer* renderer)
 	// end at 8th frame
 	player->frameNum++;
 	if (player->frameNum / player->animationDelay >= 8) {
-		player->frameNum = 0;
-		player->speed = 0.25;
 		changeState(player, WalkingState::instance());
 	}
 	player->drawCollisionBox(renderer);
@@ -289,6 +298,7 @@ void Player::update()
 void Player::render(SDL_Renderer* _renderer)
 {
 	//std::cout << getxPos() << " " << getyPos() << " | " << getCenterx() << " " << getCentery() << " | " << getSpritePosx() << " " << getSpritePosy() << "\n";
+	drawGOPoint(_renderer);
 	_state->render(this, _renderer);
 }
 
@@ -307,34 +317,30 @@ void Player::onCollision(Collider* other)
 		{
 		case TYPE_VERTICAL:
 			
-			if (verticalVelocity < 0) {
+			if ((getPrevCentery() - getCentery()) > 0) {
 				// bottom up
 				setColliderCenter(getCenterx(), other->getCentery() + other->getHalfHeight() + getHalfHeight());
-				while (isColliding(other)) moveCollider(0, 1);
 			}
-			else if (verticalVelocity > 0) {
+			else if ((getPrevCentery() - getCentery()) < 0) {
 				// up to bottom
 				setColliderCenter(getCenterx(), other->getCentery() - other->getHalfHeight() - getHalfHeight());
-				while (isColliding(other)) {
-					moveCollider(0, -1);
-
-				}
 			}
+			setSpritePosy(getCentery() - ydif);
 			setyPos(getCentery() - ydif);
 			break;
+
 		case TYPE_HORIZONTAL:
 			
-			if (HorizontalVelocity < 0) {
+			if ((getPrevCenterx() - getCenterx()) > 0) {
 				// right to left
 				setColliderCenter(other->getCenterx() + other->getHalfWidth() + getHalfWidth(), getCentery());
-				while (isColliding(other)) moveCollider(1, 0);
 			}
-			else if (HorizontalVelocity > 0) {
+			else if ((getPrevCenterx() - getCenterx()) < 0) {
 				// left to right
 				setColliderCenter(other->getCenterx() - other->getHalfWidth() - getHalfWidth(), getCentery());
-				while (isColliding(other)) moveCollider(-1, 0);
 			}
 			setxPos(getCenterx() - xdif);
+			setSpritePosx(getCenterx() - xdif);
 			
 			
 			break;

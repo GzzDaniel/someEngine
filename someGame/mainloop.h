@@ -13,6 +13,9 @@
 #include "player.h"
 #include "SecondaryEntities.h"
 
+const int LEVEL_WIDTH = 900;
+const int LEVEL_HEIGHT = 600;
+
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
 
@@ -25,6 +28,7 @@ SDL_Event sdl_event;
 
 Uint32 deltaTime=0 , oldTime=0, accumulator=0;
 
+SDL_Rect Camera = {0, 0, SCREEN_HEIGHT, SCREEN_HEIGHT};
 
 bool initializeSDL()
 {
@@ -223,7 +227,7 @@ private:
 		// TODO use a smarter implementation for checking collisions
 		for (int i = 0; i < numColliderObservers; i++)
 		{
-			for (int j = i; j < numColliderObservers; j++) {
+			for (int j = 0; j < numColliderObservers; j++) {
 				if (i != j) {
 					if (collidersArray[i]->isColliding(collidersArray[j])) {
 						collidersArray[i]->onCollision(collidersArray[j]);

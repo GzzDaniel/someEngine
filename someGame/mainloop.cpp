@@ -5,7 +5,7 @@ Engine engine;
 Engine* pe = &engine;
 
 void makePlayer() {
-	Player* link = new Player(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, 3);
+	Player* link = new Player(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, 2);
 	pe->addInputObserver(link);
 	pe->addColliderObserver(link);
 	link->loadmedia(_renderer, "link.png");
