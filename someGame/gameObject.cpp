@@ -44,11 +44,11 @@ void SpriteRenderer::moveSprite(double x, double y)
 	xPos += x;
 	yPos += y;
 }
-void SpriteRenderer::renderSprite(SDL_Renderer* renderer, SDL_Rect* spriteQuad, SDL_RendererFlip flip) 
+void SpriteRenderer::renderSprite(SDL_Renderer* renderer, SDL_Rect* srcQuad, SDL_RendererFlip flip, SDL_Rect* camera, int inOffsetx, int inOffsety)
 {
-	dstQuad = { (int)xPos, (int)yPos, (int)(width * scale), (int)(height * scale) };
+	dstQuad = { (int)(xPos - camera->x + inOffsetx + (xOffset * scale)), (int)(yPos - camera->y + inOffsety + (yOffset * scale)), (int)(width * scale), (int)(height * scale) };
 	
-	SDL_RenderCopyEx(renderer, texture, spriteQuad, &dstQuad, 0, NULL, flip);
+	SDL_RenderCopyEx(renderer, texture, srcQuad, &dstQuad, 0, NULL, flip);
 }
 
 
@@ -65,19 +65,19 @@ bool Collider::isColliding(Collider* c)
 {
 	return (isHorizontalColliding(c) && isverticalColliding(c));
 }
-void Collider::drawCollisionBox(SDL_Renderer* _renderer)
+void Collider::drawCollisionBox(SDL_Renderer* _renderer, SDL_Rect* camera)
 {
 	SDL_SetRenderDrawColor(_renderer, 0x00, 0x00, 0xFF, 0xFF);
 	// center point
-	SDL_RenderDrawPoint(_renderer, centerx, centery);
+	SDL_RenderDrawPoint(_renderer, centerx - camera->x, centery-camera->y);
 	//vertical first line
-	SDL_RenderDrawLine(_renderer, centerx - halfWidth, centery - halfHeight, centerx - halfWidth, centery + halfHeight);
+	SDL_RenderDrawLine(_renderer, centerx - halfWidth - camera->x, centery - halfHeight - camera->y, centerx - halfWidth - camera->x, centery + halfHeight - camera->y);
 	//vertical second line
-	SDL_RenderDrawLine(_renderer, centerx + halfWidth, centery - halfHeight, centerx + halfWidth, centery + halfHeight);
+	SDL_RenderDrawLine(_renderer, centerx + halfWidth - camera->x, centery - halfHeight - camera->y, centerx + halfWidth - camera->x, centery + halfHeight - camera->y);
 	//Horizontal first line
-	SDL_RenderDrawLine(_renderer, centerx - halfWidth, centery + halfHeight, centerx + halfWidth, centery + halfHeight);
+	SDL_RenderDrawLine(_renderer, centerx - halfWidth - camera->x, centery + halfHeight - camera->y, centerx + halfWidth - camera->x, centery + halfHeight - camera->y);
 	//Horizontal second line
-	SDL_RenderDrawLine(_renderer, centerx - halfWidth, centery - halfHeight, centerx + halfWidth, centery - halfHeight);
+	SDL_RenderDrawLine(_renderer, centerx - halfWidth - camera->x, centery - halfHeight - camera->y, centerx + halfWidth - camera->x, centery - halfHeight - camera->y);
 }
 void Collider::setColliderCenter(int x, int y)
 {

@@ -9,12 +9,20 @@
 enum Keypress {
 	KEY_PRESS_NULL,
 
+	// directional
 	KEY_PRESS_UP,
 	KEY_PRESS_RIGHT, // 2
 	KEY_PRESS_DOWN,
 	KEY_PRESS_LEFT, // 4, horizontal presses are even numbers 
 
+	// key specific
 	KEY_PRESS_SHIFT,
+
+	// actions
+	KEY_PRESS_INTERACT,
+
+	// key releases
+	KEY_RELE_SHIFT,
 
 	NUM_KEY_STATES
 };

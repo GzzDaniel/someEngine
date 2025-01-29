@@ -24,10 +24,10 @@ public:
 		quad = { 126, 64, 32, 32 };
 	}
 	void update() override {}
-	void render(SDL_Renderer* _renderer) override 
+	void render(SDL_Renderer* _renderer, SDL_Rect* camera) override
 	{ //renderSprite(_renderer, &quad, SDL_FLIP_NONE); 
-		renderSprite(_renderer, &quad, SDL_FLIP_NONE);
-		drawCollisionBox(_renderer);
+		renderSprite(_renderer, &quad, SDL_FLIP_NONE, camera);
+		drawCollisionBox(_renderer, camera);
 	}
 private:
 	SDL_Rect quad;
@@ -37,8 +37,8 @@ class Background : public SpriteRenderer
 public:
 	Background() : SpriteRenderer(0, 0, 900, 600, 1) { }
 	~Background() {}
-	void render(SDL_Renderer* _renderer) override {
-		renderSprite(_renderer, 0, SDL_FLIP_NONE);
+	void render(SDL_Renderer* _renderer, SDL_Rect* camera) override {
+		renderSprite(_renderer, 0, SDL_FLIP_NONE, camera);
 	}
 };
 

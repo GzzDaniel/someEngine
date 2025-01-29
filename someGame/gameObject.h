@@ -34,9 +34,9 @@ public:
 	double virtual getxPos();
 	double virtual getyPos();
 
-	void drawGOPoint(SDL_Renderer* renderer) {
+	void drawGOPoint(SDL_Renderer* renderer, SDL_Rect* camera) {
 		SDL_SetRenderDrawColor(renderer, 0xFF, 0x00, 0x00, 0xFF);
-		SDL_RenderDrawPoint(renderer, (int)xpos, (int)ypos);
+		SDL_RenderDrawPoint(renderer, (int)xpos - camera->x, (int)ypos - camera->y);
 	}
 
 private:
@@ -50,13 +50,15 @@ private:
 class SpriteRenderer
 {
 public:
-	SpriteRenderer(double x, double y, int w, int h, double scale) :
+	SpriteRenderer(double x, double y, int w, int h, double scale, int xOffset = 0, int yOffset = 0) :
 		texture(NULL),
 		xPos(x),
 		yPos(y),
 		width(w),
 		height(h),
 		scale(scale),
+		xOffset(xOffset),
+		yOffset(yOffset),
 		dstQuad({ (int)xPos, (int)yPos, (int)(width * scale), (int)(height * scale) })
 	{}
 	virtual ~SpriteRenderer() {}
@@ -68,19 +70,22 @@ public:
 
 	void loadmedia(SDL_Renderer* _renderer, std::string path);
 
-	// calculates the quad renders a copy
-	void renderSprite(SDL_Renderer* renderer, SDL_Rect* spriteQuad, SDL_RendererFlip flip);
+	// calculates the quad renders a copy based on the gameObjects position
+	void renderSprite(SDL_Renderer* renderer, SDL_Rect* srcQuad, SDL_RendererFlip flip, SDL_Rect* camera, int offsetx = 0, int offsety = 0);
 
 	// render logic at each frame
-	void virtual render(SDL_Renderer* renderer) = 0;
+	void virtual render(SDL_Renderer* renderer, SDL_Rect* camera) = 0;
 
 	SDL_Texture* getTexture() {
 		return texture;
 	}
 	double getSpritePosx() { return xPos; }
 	double getSpritePosy() { return yPos; }
-	void setSpritePosx(double x) { xPos = x; }
-	void setSpritePosy(double y) { yPos = y; }
+	void setSpritePosx(double x) { xPos = x + (xOffset * scale); }
+	void setSpritePosy(double y) { yPos = y + (xOffset * scale); }
+
+	int getSpriteWidth() { return width; }
+	int getSpriteHeight() { return height; }
 
 
 private:
@@ -92,10 +97,12 @@ private:
 
 	double scale;
 
+	int xOffset;
+	int yOffset;
+
 	SDL_Texture* texture;
 
 	SDL_Rect dstQuad;
-
 };
 
 
@@ -114,14 +121,16 @@ enum CollisionType {
 class Collider
 {
 public:
-	Collider(int centerx, int centery, int w, int h, CollisionType t) :
+	Collider(int centerx, int centery, int w, int h, CollisionType t, int xOffset = 0, int yOffset = 0) :
 		type(t),
-		centerx(centerx),
-		centery(centery),
+		centerx(centerx+xOffset),
+		centery(centery+yOffset),
 		halfWidth(w / 2),
 		halfHeight(h / 2),
 		prevCenterx(centerx),
-		prevCentery(centery)
+		prevCentery(centery),
+		xOffset(xOffset),
+		yOffset(yOffset)
 	{}
 	virtual ~Collider() {}
 
@@ -129,7 +138,7 @@ public:
 	bool isColliding(Collider* c);
 
 	// draws the hitbox using 4 lines
-	void drawCollisionBox(SDL_Renderer* _renderer);
+	void drawCollisionBox(SDL_Renderer* _renderer, SDL_Rect* camera);
 
 	// places the center at specified position
 	void setColliderCenter(int x, int y);
@@ -155,6 +164,8 @@ public:
 	int getCentery() { return centery; }
 	int getPrevCenterx() { return prevCenterx; }
 	int getPrevCentery() { return prevCentery; }
+	int getColliderOffsetx() { return xOffset; }
+	int getColliderOffsety() { return yOffset; }
 
 private:
 
@@ -170,6 +181,9 @@ private:
 
 	int prevCenterx;
 	int prevCentery;
+
+	int xOffset;
+	int yOffset;
 };
 
 

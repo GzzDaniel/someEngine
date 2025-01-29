@@ -13,7 +13,7 @@
 #include "player.h"
 #include "SecondaryEntities.h"
 
-const int LEVEL_WIDTH = 900;
+const int LEVEL_WIDTH = 740;
 const int LEVEL_HEIGHT = 600;
 
 const int SCREEN_WIDTH = 640;
@@ -109,6 +109,10 @@ public:
 class Engine : public Subject
 {
 public:
+	void addCameraTarget(GameObject* target) {
+		cameraTarget = target;
+	}
+
 	Engine() {
 		if (!initializeSDL()) {
 			std::cout << "error initializing" << std::endl;
@@ -140,7 +144,7 @@ public:
 	ControllerManager _controllerManager;
 
 private:
-
+	GameObject* cameraTarget;
 	
 	void handleInput(ControllerManager* CMP) {
 		for (int i = 0; i < numInputObservers; i++) {
@@ -151,7 +155,6 @@ private:
 	// Loop Methods
 	void input()
 	{
-
 		while (SDL_PollEvent(&sdl_event) != 0) {
 			if (sdl_event.type == SDL_QUIT) {
 				running = false;
@@ -184,7 +187,8 @@ private:
 					std::cout << "shift" << std::endl;
 					_controllerManager.setLastKeyEvent(KEY_PRESS_SHIFT);
 					handleInput(&_controllerManager);
-					_controllerManager.setLastKeyEvent(KEY_PRESS_NULL);
+					//_controllerManager.setLastKeyEvent(KEY_PRESS_NULL);
+					break;
 				}
 			}
 			else if (sdl_event.type == SDL_KEYUP) {
@@ -210,9 +214,17 @@ private:
 					std::cout << "right released" << std::endl;
 					_controllerManager.releaseDpadKey(KEY_PRESS_RIGHT); handleInput(&_controllerManager);
 					break;
+				case SDLK_LSHIFT:
+					std::cout << "shift released" << std::endl;
+					_controllerManager.setLastKeyEvent(KEY_RELE_SHIFT);
+					handleInput(&_controllerManager);
+					break;
 				}
 			}	
-		}
+		} //  end of event queue
+
+		_controllerManager.setLastKeyEvent(KEY_PRESS_NULL);
+
 		// notifies all observers to read all current inputs
 		handleInput(&_controllerManager);
 		return;
@@ -239,10 +251,32 @@ private:
 	}
 	void display() 
 	{
+		Camera.x = cameraTarget->getxPos() - SCREEN_WIDTH/2;
+		Camera.y = cameraTarget->getyPos() - SCREEN_HEIGHT/2;
+
+
+		//Keep the camera in bounds
+		if (Camera.x < 0)
+		{
+			Camera.x = 0;
+		}
+		if (Camera.y < 0)
+		{
+			Camera.y = 0;
+		}
+		if (Camera.x > LEVEL_WIDTH - Camera.w)
+		{
+			Camera.x = LEVEL_WIDTH - Camera.w;
+		}
+		if (Camera.y > LEVEL_HEIGHT - Camera.h)
+		{
+			Camera.y = LEVEL_HEIGHT - Camera.h;
+		}
+
 
 		// renders all gameObjects and then switches buffers
 		for (int i = 0; i < numRenderedObservers; i++) {
-			rendersArray[i]->render(_renderer);
+			rendersArray[i]->render(_renderer, &Camera);
 		}
 		//Update screen
 		SDL_RenderPresent(_renderer);

@@ -8,8 +8,9 @@ void makePlayer() {
 	Player* link = new Player(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, 2);
 	pe->addInputObserver(link);
 	pe->addColliderObserver(link);
-	link->loadmedia(_renderer, "link.png");
+	link->loadmedia(_renderer, "link2.png");
 	pe->addRenderedObserver(link);
+	pe->addCameraTarget(link);
 }
 int main(int argc, char* args[])
 {
@@ -24,7 +25,6 @@ int main(int argc, char* args[])
 	engine.addColliderObserver(&f);
 	
 	makePlayer();
-
 	engine.run();
 
 	return 0;

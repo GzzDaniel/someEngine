@@ -34,17 +34,15 @@ void IdleState::update(Player* player)
 {
 
 }
-void IdleState::render(Player* player, SDL_Renderer* renderer)
+void IdleState::render(Player* player, SDL_Renderer* renderer, SDL_Rect* camera)
 {
-	shiftPressed = false;
 	//TODO idle animation
 	if (player->direction == RIGHT) {
 		
-		player->renderSprite(renderer, &player->standingSprites[LEFT], SDL_FLIP_HORIZONTAL);
+		player->renderSprite(renderer, &player->standingSprites[LEFT], SDL_FLIP_HORIZONTAL, camera);
 	}
 	
-	player->renderSprite(renderer, &player->standingSprites[player->direction], SDL_FLIP_NONE);
-	player->drawCollisionBox(renderer);
+	player->renderSprite(renderer, &player->standingSprites[player->direction], SDL_FLIP_NONE, camera);
 }
 
 // TODO give variables to WalkingState Class and make it legible
@@ -95,8 +93,8 @@ void WalkingState::handleInput(Player* player, ControllerManager* controller)
 	switch (controller->getLastKeyEvent())
 	{
 	case KEY_PRESS_SHIFT:
-		
 		changeState(player, RollState::instance());
+		break;
 	}
 
 }
@@ -130,27 +128,22 @@ void WalkingState::update(Player* player)
 	
 	player->move(dx, dy);
 	player->moveSprite(dx, dy);
-	//player->moveCollider(dx, dy);
-	// adjusts the collider to the sprite. link's sprite specifically
-
-	player->setColliderCenter((int)(player->getxPos() + 17 ), (int)(player->getyPos() + 23));
-	//std::cout << player->getCenterx() << ", " << player->getCentery() << "\n";
 }
-void WalkingState::render(Player* player, SDL_Renderer* renderer)
+void WalkingState::render(Player* player, SDL_Renderer* renderer, SDL_Rect* camera)
 {
 	switch (player->direction) 
 	{
 	case DOWN:
-		player->renderSprite(renderer, &player->walkingDownSprites[player->frameNum / player->animationDelay], SDL_FLIP_NONE);
+		player->renderSprite(renderer, &player->walkingDownSprites[player->frameNum / player->animationDelay], SDL_FLIP_NONE, camera);
 		break;
 	case LEFT:
-		player->renderSprite(renderer, &player->walkingLeftSprites[player->frameNum / player->animationDelay], SDL_FLIP_NONE);
+		player->renderSprite(renderer, &player->walkingLeftSprites[player->frameNum / player->animationDelay], SDL_FLIP_NONE, camera);
 		break;
 	case RIGHT:
-		player->renderSprite(renderer, &player->walkingLeftSprites[player->frameNum / player->animationDelay], SDL_FLIP_HORIZONTAL);
+		player->renderSprite(renderer, &player->walkingLeftSprites[player->frameNum / player->animationDelay], SDL_FLIP_HORIZONTAL, camera);
 		break;
 	case UP:
-		player->renderSprite(renderer, &player->walkingUpSprites[player->frameNum / player->animationDelay], SDL_FLIP_NONE);
+		player->renderSprite(renderer, &player->walkingUpSprites[player->frameNum / player->animationDelay], SDL_FLIP_NONE, camera);
 		break;
 	}
 
@@ -159,7 +152,6 @@ void WalkingState::render(Player* player, SDL_Renderer* renderer)
 		player->frameNum = 0;
 	}
 
-	player->drawCollisionBox(renderer);
 }
 
 void RollState::handleInput(Player* player, ControllerManager* controller)  
@@ -168,27 +160,27 @@ void RollState::handleInput(Player* player, ControllerManager* controller)
 }
 void RollState::update(Player* player)  
 {
-	player->move(player->HorizontalVelocity * player->speed * player->diagonalFactor, player->verticalVelocity * player->speed * player->diagonalFactor);
-	player->moveSprite(player->HorizontalVelocity * player->speed * player->diagonalFactor, player->verticalVelocity * player->speed * player->diagonalFactor);
-	//player->moveCollider(player->HorizontalVelocity * player->speed * player->diagonalFactor, player->verticalVelocity * player->speed * player->diagonalFactor);
+	double dx = (player->HorizontalVelocity * player->speed * player->diagonalFactor);
+	double dy = (player->verticalVelocity * player->speed * player->diagonalFactor);
 
-	player->setColliderCenter((int)(player->getxPos() + 17 * player->scale / 2), (int)(player->getyPos() + 23 * player->scale / 2));
+	player->move(dx, dy);
+	player->moveSprite(dx, dy);
 }
-void RollState::render(Player* player, SDL_Renderer* renderer)
+void RollState::render(Player* player, SDL_Renderer* renderer, SDL_Rect* camera)
 {
 	switch (player->direction)
 	{
 	case DOWN:
-		player->renderSprite(renderer, &player->rollingDownSprites[player->frameNum / player->animationDelay], SDL_FLIP_NONE);
+		player->renderSprite(renderer, &player->rollingDownSprites[player->frameNum / player->animationDelay], SDL_FLIP_NONE, camera);
 		break;
 	case LEFT:
-		player->renderSprite(renderer, &player->rollingLeftSprites[player->frameNum / player->animationDelay], SDL_FLIP_NONE);
+		player->renderSprite(renderer, &player->rollingLeftSprites[player->frameNum / player->animationDelay], SDL_FLIP_NONE, camera);
 		break;
 	case RIGHT:
-		player->renderSprite(renderer, &player->rollingLeftSprites[player->frameNum / player->animationDelay], SDL_FLIP_HORIZONTAL);
+		player->renderSprite(renderer, &player->rollingLeftSprites[player->frameNum / player->animationDelay], SDL_FLIP_HORIZONTAL, camera);
 		break;
 	case UP:
-		player->renderSprite(renderer, &player->rollingUpSprites[player->frameNum / player->animationDelay], SDL_FLIP_NONE);
+		player->renderSprite(renderer, &player->rollingUpSprites[player->frameNum / player->animationDelay], SDL_FLIP_NONE, camera);
 		break;
 	}
 
@@ -197,7 +189,7 @@ void RollState::render(Player* player, SDL_Renderer* renderer)
 	if (player->frameNum / player->animationDelay >= 8) {
 		changeState(player, WalkingState::instance());
 	}
-	player->drawCollisionBox(renderer);
+	
 }
 
 void JumpingState::handleInput(Player* player, ControllerManager* controller)
@@ -207,7 +199,7 @@ void JumpingState::handleInput(Player* player, ControllerManager* controller)
 void JumpingState::update(Player* player) 
 {
 }
-void JumpingState::render(Player* player, SDL_Renderer* renderer)
+void JumpingState::render(Player* player, SDL_Renderer* renderer, SDL_Rect* camera)
 {
 
 }
@@ -215,75 +207,40 @@ void JumpingState::render(Player* player, SDL_Renderer* renderer)
 
 void Player::defineSrcSprites()
 {
-	standingSprites[DOWN] = { 15, 9, 19, 23 };
-	//standingSprites[DOWN] = { 327 -33, 1102, 19, 23 };
-	standingSprites[LEFT] = { 48, 9, 19, 23 };
-	standingSprites[UP] = { 79, 9, 19, 23 };
+	int spriteWidth = getSpriteWidth();
+	int spriteHeight = getSpriteHeight();
 
-	//TODO load sprite by multiplying and using for loops
-	// sprites are separated every 32 pixels horizontally
-	walkingDownSprites[0] = { 15, 77, 19, 23 };
-	walkingDownSprites[1] = { 47, 77, 19, 23 };
-	walkingDownSprites[2] = { 79, 77, 19, 23 };
-	walkingDownSprites[3] = { 111, 77, 19, 23 };
-	walkingDownSprites[4] = { 143, 77, 19, 23 };
-	walkingDownSprites[5] = { 175, 77, 19, 23 };
-	walkingDownSprites[6] = { 207, 77, 19, 23 };
-	walkingDownSprites[7] = { 239, 77, 19, 23 };
-	walkingDownSprites[8] = { 271, 77, 19, 23 };
-	walkingDownSprites[9] = { 303, 77, 19, 23 };
+	// STANDING
+	standingSprites[DOWN] = { 0, 0, spriteWidth, spriteHeight};
+	standingSprites[LEFT] = {32 , 0, spriteWidth, spriteHeight };
+	standingSprites[UP] = { 64, 0, spriteWidth, spriteHeight };
 
-	int startLeft = 348;
-	walkingLeftSprites[0] = { startLeft + 32 * 0, 77, 19, 23 };
-	walkingLeftSprites[1] = { startLeft - 2 + 32 * 1, 77, 19, 23 };
-	walkingLeftSprites[2] = { startLeft + 32 * 2, 77, 19, 23 };
-	walkingLeftSprites[3] = { startLeft + 32 * 3, 77, 19, 23 };
-	walkingLeftSprites[4] = { startLeft - 2 + 32 * 4, 77, 19, 23 };
-	walkingLeftSprites[5] = { startLeft + 32 * 5, 77, 19, 23 };
-	walkingLeftSprites[6] = { startLeft - 3 + 32 * 6, 77, 19, 23 };
-	walkingLeftSprites[7] = { startLeft + 32 * 7, 77, 19, 23 };
-	walkingLeftSprites[8] = { startLeft + 3 + 32 * 8, 77, 19, 23 };
-	walkingLeftSprites[9] = { startLeft - 2 + 32 * 9, 77, 19, 23 };
+	// OTHERS
+	shadowSprite = { 320, 0, spriteWidth, spriteHeight };
 
-	int startUp = 683;
-	walkingUpSprites[0] = { startUp + 32 * 0, 77, 19, 23 };
-	walkingUpSprites[1] = { startUp + 32 * 1, 77, 19, 23 };
-	walkingUpSprites[2] = { startUp + 32 * 2, 77, 19, 23 };
-	walkingUpSprites[3] = { startUp + 32 * 3, 77, 19, 23 };
-	walkingUpSprites[4] = { startUp + 32 * 4, 77, 19, 23 };
-	walkingUpSprites[5] = { startUp + 32 * 5, 77, 19, 23 };
-	walkingUpSprites[6] = { startUp + 32 * 6, 77, 19, 23 };
-	walkingUpSprites[7] = { startUp + 32 * 7, 77, 19, 23 };
-	walkingUpSprites[8] = { startUp + 32 * 8, 77, 19, 23 };
-	walkingUpSprites[9] = { startUp + 32 * 9, 77, 19, 23 };
+	// WALKING
+	for (int i = 0; i < 10; i++){
+		walkingDownSprites[i] = { 0 + (32 * i), 32, spriteWidth, spriteHeight };
+	}
+	for (int i = 0; i < 10; i++) {
+		walkingLeftSprites[i] = { 352 + (32 * i), 32, spriteWidth, spriteHeight };
+	}
 
-	rollingDownSprites[0] = { 19, 1102, 19, 23 };
-	rollingDownSprites[1] = { 19 + 32, 1102, 19, 23 };
-	rollingDownSprites[2] = { 19 + 32 * 2, 1102, 19, 23 };
-	rollingDownSprites[3] = { 19 + 32 * 3, 1102, 19, 23 };
-	rollingDownSprites[4] = { 19 + 32 * 4, 1102, 19, 23 };
-	rollingDownSprites[5] = { 19 + 32 * 5, 1102, 19, 23 };
-	rollingDownSprites[6] = { 19 - 4 + 32 * 6, 1102 + 2, 19, 23 };;
-	rollingDownSprites[7] = { 19-4+32*7, 1102+3, 19, 23 };
+	for (int i = 0; i < 10; i++) {
+		walkingUpSprites[i] = { 704 + (32 * i), 32, spriteWidth, spriteHeight };
+	}
 
-	rollingLeftSprites[0] = { 327 - 33, 1102, 19, 23 };
-	rollingLeftSprites[1] = { 327 + 32 * 0, 1100, 19, 23 };
-	rollingLeftSprites[2] = { 328 + 32 * 1, 1100, 19, 23 };
-	rollingLeftSprites[3] = { 323 + 32 * 2, 1102, 19, 23 };
-	rollingLeftSprites[4] = { 326 + 32 * 3, 1101, 19, 23 };
-	rollingLeftSprites[5] = { 326 + 32 * 4, 1101, 19, 23 };
-	rollingLeftSprites[6] = { 326 + 32 * 5, 1105, 19, 23 };
-	rollingLeftSprites[7] = { startLeft - 2 + 32 * 9, 77, 19, 23 };
-
-
-	rollingUpSprites[0] = { 539 + 32 * 0, 1104, 19, 23 };
-	rollingUpSprites[1] = { 539 + 32 * 1, 1104, 19, 23 };
-	rollingUpSprites[2] = { 539 + 32 * 2, 1104, 19, 23 };
-	rollingUpSprites[3] = { 539 + 32 * 3, 1104, 19, 23 };
-	rollingUpSprites[4] = { 539 + 32 * 4, 1104, 19, 23 };
-	rollingUpSprites[5] = { 539 + 32 * 5, 1104, 19, 23 };
-	rollingUpSprites[6] = { 539 - 4 + 32 * 6, 1104, 19, 23 };
-	rollingUpSprites[7] = { 539 - 4 + 32 * 7, 1104, 19, 23 };
+	// ROLLIMG
+	for (int i = 0; i < 8; i++) {
+		rollingDownSprites[i] = { 0 + (32 * i), 64, spriteWidth, spriteHeight };
+	}
+	for (int i = 0; i < 8; i++) {
+		rollingLeftSprites[i] = { 288 + (32 * i), 64, spriteWidth, spriteHeight };
+	}
+	for (int i = 0; i < 8; i++) {
+		rollingUpSprites[i] = { 576 + (32 * i), 64, spriteWidth, spriteHeight };
+	}
+	
 }
 
 
@@ -294,24 +251,24 @@ void Player::handleInput(ControllerManager* controller)
 void Player::update() 
 {
 	_state->update(this);
+	setColliderCenter((int)getxPos() + getColliderOffsetx(), (int)getyPos() + getColliderOffsety());
 }
-void Player::render(SDL_Renderer* _renderer)
+void Player::render(SDL_Renderer* _renderer, SDL_Rect* camera)
 {
-	//std::cout << getxPos() << " " << getyPos() << " | " << getCenterx() << " " << getCentery() << " | " << getSpritePosx() << " " << getSpritePosy() << "\n";
-	drawGOPoint(_renderer);
-	_state->render(this, _renderer);
+	renderSprite(_renderer, &shadowSprite, SDL_FLIP_NONE, camera);
+
+	_state->render(this, _renderer, camera);
+
+	drawCollisionBox(_renderer, camera);
+	drawGOPoint(_renderer, camera);
 }
 
 void Player::onCollision(Collider* other)
 {
-	//std::cout << "before " << getCenterx() << ", " << getCentery() << " center diff " << std::abs(this->getCentery() - other->getCentery()) <<  " height diff " << this->getHalfHeight() +other->getHalfHeight() <<"\n";
 	if (other->getType() == TYPE_WALL)
 	{
-		// get difference in positions to make calculations easier
-		// TODO set position based on the center with one line only
-		// or TODO set position based on the difference in distance that the collider got into the other collider
-		int xdif = (int)(getCenterx() - getxPos());
-		int ydif = (int)(getCentery() - getyPos());
+		int startColliderx = getCenterx();
+		int startCollidery = getCentery();
 
 		switch (getPrevCollision(other))
 		{
@@ -325,8 +282,6 @@ void Player::onCollision(Collider* other)
 				// up to bottom
 				setColliderCenter(getCenterx(), other->getCentery() - other->getHalfHeight() - getHalfHeight());
 			}
-			setSpritePosy(getCentery() - ydif);
-			setyPos(getCentery() - ydif);
 			break;
 
 		case TYPE_HORIZONTAL:
@@ -339,12 +294,14 @@ void Player::onCollision(Collider* other)
 				// left to right
 				setColliderCenter(other->getCenterx() - other->getHalfWidth() - getHalfWidth(), getCentery());
 			}
-			setxPos(getCenterx() - xdif);
-			setSpritePosx(getCenterx() - xdif);
-			
-			
 			break;
 		}
+
+		int colliderDifx = getCenterx() - startColliderx;
+		int colliderDify = getCentery() - startCollidery;
+
+		moveSprite(colliderDifx, colliderDify);
+		move(colliderDifx, colliderDify);
 	}
-	//std::cout << "after " << getCenterx() << ", " << getCentery() << " center diff " << std::abs(this->getCentery() - other->getCentery()) << " height diff " << this->getHalfHeight() + other->getHalfHeight() << "\n";
+	
 }

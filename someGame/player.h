@@ -34,7 +34,7 @@ public:
 	virtual ~PlayerState() {}
 	virtual void handleInput(Player* player, ControllerManager* controller) {}
 	virtual void update(Player* player) {}
-	virtual void render(Player* player, SDL_Renderer* renderer) {}
+	virtual void render(Player* player, SDL_Renderer* renderer, SDL_Rect* camera) {}
 	virtual PlayerStateID getStateID() = 0;
 	virtual std::string getName() = 0;
 protected:
@@ -47,7 +47,7 @@ public:
 	~IdleState() {}
 	void handleInput(Player* player, ControllerManager* controller) override;
 	void update(Player* player) override;
-	void render(Player* player, SDL_Renderer* renderer) override;
+	void render(Player* player, SDL_Renderer* renderer, SDL_Rect* camera) override;
 	static PlayerState* instance() {
 		static IdleState inst;
 		return &inst;
@@ -66,7 +66,7 @@ public:
 	~WalkingState() {}
 	void handleInput(Player* player, ControllerManager* controller) override;
 	void update(Player* player) override;
-	void render(Player* player, SDL_Renderer* renderer) override;
+	void render(Player* player, SDL_Renderer* renderer, SDL_Rect* camera) override;
 	static PlayerState* instance() {
 		static WalkingState inst;
 		return &inst;
@@ -83,7 +83,7 @@ public:
 	~RollState() {}
 	void handleInput(Player* player, ControllerManager* controller) override;
 	void update(Player* player) override;
-	void render(Player* player, SDL_Renderer* renderer) override;
+	void render(Player* player, SDL_Renderer* renderer, SDL_Rect* camera) override;
 	static PlayerState* instance() {
 		static RollState inst;
 		return &inst;
@@ -100,7 +100,7 @@ public:
 	~JumpingState() {}
 	void handleInput(Player* player, ControllerManager* controller) override;
 	void update(Player* player) override;
-	void render(Player* player, SDL_Renderer* renderer) override;
+	void render(Player* player, SDL_Renderer* renderer, SDL_Rect* camera) override;
 	static PlayerState* instance() {
 		static JumpingState inst;
 		return &inst;
@@ -116,8 +116,8 @@ public:
 
 	Player(int posx, int posy, int scale) :
 		GameObject(posx, posy),
-		Collider(posx + 17 * scale / 2, posy + 23 * scale / 2, 30, 53, TYPE_PLAYER),
-		SpriteRenderer(posx, posy, 18, 23, scale),
+		Collider(posx, posy, 30, 30, TYPE_PLAYER, 0, -10),
+		SpriteRenderer(posx, posy, 32, 32, scale, -16, -27),
 		scale(scale),
 
 		direction(DOWN),
@@ -136,7 +136,7 @@ public:
 	~Player() { }
 
 	
-	void render(SDL_Renderer* _renderer) override;
+	void render(SDL_Renderer* _renderer, SDL_Rect* camera) override;
 
 	void update() override;
 	void onCollision(Collider* other) override;
@@ -169,6 +169,7 @@ private:
 	SDL_Rect rollingDownSprites[10];
 	SDL_Rect rollingLeftSprites[10];
 	SDL_Rect rollingUpSprites[10];
+	SDL_Rect shadowSprite;
 	int frameNum;
 
 	PlayerDirection direction;
