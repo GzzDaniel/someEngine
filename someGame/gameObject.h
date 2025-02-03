@@ -112,6 +112,10 @@ enum CollisionType {
 	TYPE_WALL,
 	TYPE_ENEMY,
 
+	// Functionalities
+	TYPE_PUSHOUT,
+	TYPE_PUSHIN,
+
 	// types used to detect collision direction
 	TYPE_HORIZONTAL,
 	TYPE_VERTICAL,

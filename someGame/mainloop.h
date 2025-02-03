@@ -165,29 +165,34 @@ private:
 				{
 				case SDLK_UP: 
 				case SDLK_w:
-					std::cout << "up" << std::endl;
+					//std::cout << "up" << std::endl;
 					_controllerManager.pressDpadKey(KEY_PRESS_UP); handleInput(&_controllerManager);
 					break;
 				case SDLK_DOWN: 
 				case SDLK_s:
-					std::cout << "down" << std::endl;
+					//std::cout << "down" << std::endl;
 					_controllerManager.pressDpadKey(KEY_PRESS_DOWN); handleInput(&_controllerManager);
 					break;
 				case SDLK_a:
 				case SDLK_LEFT: 
-					std::cout << "left" << std::endl; 
+					//std::cout << "left" << std::endl; 
 					_controllerManager.pressDpadKey(KEY_PRESS_LEFT); handleInput(&_controllerManager);
 					break;
 				case SDLK_d:
 				case SDLK_RIGHT: 
-					std::cout << "right" << std::endl; 
+					//std::cout << "right" << std::endl; 
 					_controllerManager.pressDpadKey(KEY_PRESS_RIGHT); handleInput(&_controllerManager);
 					break;
 				case SDLK_LSHIFT:
-					std::cout << "shift" << std::endl;
+					//std::cout << "shift" << std::endl;
 					_controllerManager.setLastKeyEvent(KEY_PRESS_SHIFT);
 					handleInput(&_controllerManager);
 					//_controllerManager.setLastKeyEvent(KEY_PRESS_NULL);
+					break;
+				case SDLK_SPACE:
+					//std::cout << "space pressed" << std::endl;
+					_controllerManager.setLastKeyEvent(KEY_PRESS_SPACE);
+					handleInput(&_controllerManager);
 					break;
 				}
 			}
@@ -197,26 +202,31 @@ private:
 				case SDLK_UP:
 				case SDLK_w:
 					_controllerManager.releaseDpadKey(KEY_PRESS_UP); handleInput(&_controllerManager);
-					std::cout << "up released" << std::endl;
+					//std::cout << "up released" << std::endl;
 					break;
 				case SDLK_DOWN:
 				case SDLK_s:
-					std::cout << "down released" << std::endl;
+					//std::cout << "down released" << std::endl;
 					_controllerManager.releaseDpadKey(KEY_PRESS_DOWN); handleInput(&_controllerManager);
 					break;
 				case SDLK_LEFT:
 				case SDLK_a:
-					std::cout << "left released" << std::endl;
+					//std::cout << "left released" << std::endl;
 					_controllerManager.releaseDpadKey(KEY_PRESS_LEFT); handleInput(&_controllerManager);
 					break;
 				case SDLK_RIGHT:
 				case SDLK_d:
-					std::cout << "right released" << std::endl;
+					//std::cout << "right released" << std::endl;
 					_controllerManager.releaseDpadKey(KEY_PRESS_RIGHT); handleInput(&_controllerManager);
 					break;
 				case SDLK_LSHIFT:
-					std::cout << "shift released" << std::endl;
+					//std::cout << "shift released" << std::endl;
 					_controllerManager.setLastKeyEvent(KEY_RELE_SHIFT);
+					handleInput(&_controllerManager);
+					break;
+				case SDLK_SPACE:
+					//std::cout << "space released" << std::endl;
+					_controllerManager.setLastKeyEvent(KEY_RELE_SPACE);
 					handleInput(&_controllerManager);
 					break;
 				}

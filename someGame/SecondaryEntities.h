@@ -16,7 +16,7 @@ class Obstacle : public GameObject, public Collider, public SpriteRenderer
 public:
 	Obstacle(int x, int y) :
 		GameObject(x, y),
-		Collider(x, y, 80, 80, TYPE_WALL),
+		Collider(x, y, 80, 80, TYPE_PUSHOUT),
 		SpriteRenderer(x-50, y-50, 100, 100, 1)
 	{}
 	~Obstacle() {}
@@ -27,8 +27,9 @@ public:
 	void render(SDL_Renderer* _renderer, SDL_Rect* camera) override
 	{ //renderSprite(_renderer, &quad, SDL_FLIP_NONE); 
 		renderSprite(_renderer, &quad, SDL_FLIP_NONE, camera);
-		drawCollisionBox(_renderer, camera);
+		//drawCollisionBox(_renderer, camera);
 	}
+
 private:
 	SDL_Rect quad;
 };

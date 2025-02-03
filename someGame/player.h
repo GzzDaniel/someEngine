@@ -10,6 +10,8 @@
 #include "controllermanager.h"
 #include "gameObject.h"
 
+double const DIAGONAL_FACTOR = 0.7071067811865476;
+
 enum PlayerDirection {
 	DOWN,
 	LEFT,
@@ -22,7 +24,8 @@ enum PlayerStateID {
 	IDLE,
 	WALKING,
 	ROLLING,
-	JUMPING
+	JUMPING,
+	ATTACKING
 };
 
 // forward declare for the state classes
@@ -37,6 +40,7 @@ public:
 	virtual void render(Player* player, SDL_Renderer* renderer, SDL_Rect* camera) {}
 	virtual PlayerStateID getStateID() = 0;
 	virtual std::string getName() = 0;
+	virtual void initialize(Player* player) {};
 protected:
 	void changeState(Player* player, PlayerState* state);
 };
@@ -107,6 +111,26 @@ public:
 	}
 	PlayerStateID getStateID() override { return JUMPING; }
 	std::string getName() { return "jumping"; }
+
+	void initialize(Player* player) override;
+private:
+	double maxSpeed;
+};
+
+class AttackState : public PlayerState
+{
+public:
+	~AttackState() {}
+	void handleInput(Player* player, ControllerManager* controller) override;
+	void update(Player* player) override;
+	void render(Player* player, SDL_Renderer* renderer, SDL_Rect* camera) override;
+	static PlayerState* instance() {
+		static AttackState inst;
+		return &inst;
+	}
+	PlayerStateID getStateID() override { return ATTACKING; }
+	std::string getName() { return "attacking"; }
+
 };
 
 
@@ -158,6 +182,7 @@ private:
 	friend class IdleState;
 	friend class RollState;
 	friend class PlayerState;
+	friend class JumpingState;
 
 	int scale;
 

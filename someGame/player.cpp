@@ -3,20 +3,33 @@
 void PlayerState::changeState(Player* player, PlayerState* state) 
 {
 	player->frameNum = 0;
-
-	// next state
-	if (state->getStateID() == ROLLING) {
-		std::cout << "increased speed, changed states\n";
-		player->speed *= 2;
-	}
-
-	// prev state
-	if (player->getState()->getStateID() == ROLLING) {
-		player->speed = 0.18;
-	}
-
 	std::cout << "changed states from " << player->getState()->getName() << " to " << state->getName() << "\n";
 	player->changeState(state);
+
+	// changes for the next state
+	switch (state->getStateID()) {
+	case ROLLING:
+		player->speed *= 2;
+		player->HorizontalVelocity *= 2;
+		player->verticalVelocity *= 2;
+		break;
+	case IDLE:
+		player->speed *= 0;
+		for (int i = 0; i < 4; i++) {
+			player->moveBools[i] = false;
+		}
+		player->verticalVelocity = 0;
+		player->HorizontalVelocity = 0;
+		player->diagonalFactor = 1;
+		break;
+	case JUMPING:
+		player->_state->initialize(player);
+		player->speed = 0.0005;
+		break;
+	case WALKING:
+		player->speed = 0.18;
+	}	
+	
 }
 
 void IdleState::handleInput(Player* player, ControllerManager* controller)  
@@ -28,6 +41,9 @@ void IdleState::handleInput(Player* player, ControllerManager* controller)
 		else {
 			changeState(player, WalkingState::instance());
 		}
+	}
+	if (controller->getLastKeyEvent() == KEY_PRESS_SPACE) {
+		changeState(player, JumpingState::instance());
 	}
 }
 void IdleState::update(Player* player)  
@@ -95,6 +111,9 @@ void WalkingState::handleInput(Player* player, ControllerManager* controller)
 	case KEY_PRESS_SHIFT:
 		changeState(player, RollState::instance());
 		break;
+	case KEY_PRESS_SPACE:
+		changeState(player, JumpingState::instance());
+		break;
 	}
 
 }
@@ -104,30 +123,31 @@ void WalkingState::update(Player* player)
 	// Velocity variables
 	player->verticalVelocity = 0;
 	player->HorizontalVelocity = 0;
-	player->diagonalFactor = 1;
 
 	if (player->moveBools[UP]) {
-		player->verticalVelocity -= 1;
+		player->verticalVelocity = -player->speed ;
 	}
 	else if (player->moveBools[DOWN]) {
-		player->verticalVelocity += 1;
-	}
-	if (player->moveBools[RIGHT]) {
-		player->HorizontalVelocity += 1;
-	}
-	else if (player->moveBools[LEFT]) {
-		player->HorizontalVelocity -= 1;
-	}
-	if (player->HorizontalVelocity != 0 && player->verticalVelocity != 0) {
-		// used to normalize diagonal movement. otherwise diagonal movement f e e l s slightly faster
-		player->diagonalFactor = 0.7071067811865476;
+		player->verticalVelocity = player->speed;
 	}
 
-	double dx = (player->HorizontalVelocity * player->speed * player->diagonalFactor);
-	double dy = (player->verticalVelocity * player->speed * player->diagonalFactor);
+	if (player->moveBools[RIGHT]) {
+		player->HorizontalVelocity = player->speed;
+	}
+	else if (player->moveBools[LEFT]) {
+		player->HorizontalVelocity = -player->speed;
+	}
+
+	if (player->HorizontalVelocity != 0 && player->verticalVelocity != 0) {
+		// used to normalize diagonal movement. otherwise diagonal movement f e e l s slightly faster
+		player->verticalVelocity *= DIAGONAL_FACTOR;
+		player->HorizontalVelocity *= DIAGONAL_FACTOR;
+	}
 	
-	player->move(dx, dy);
-	player->moveSprite(dx, dy);
+	player->move(player->HorizontalVelocity, player->verticalVelocity);
+	player->moveSprite(player->HorizontalVelocity, player->verticalVelocity);
+
+	
 }
 void WalkingState::render(Player* player, SDL_Renderer* renderer, SDL_Rect* camera)
 {
@@ -156,15 +176,14 @@ void WalkingState::render(Player* player, SDL_Renderer* renderer, SDL_Rect* came
 
 void RollState::handleInput(Player* player, ControllerManager* controller)  
 {
-
+	if (controller->getLastKeyEvent() == KEY_PRESS_SPACE && player->frameNum > 4) {
+		changeState(player, JumpingState::instance());
+	}
 }
 void RollState::update(Player* player)  
 {
-	double dx = (player->HorizontalVelocity * player->speed * player->diagonalFactor);
-	double dy = (player->verticalVelocity * player->speed * player->diagonalFactor);
-
-	player->move(dx, dy);
-	player->moveSprite(dx, dy);
+	player->move(player->HorizontalVelocity, player->verticalVelocity);
+	player->moveSprite(player->HorizontalVelocity, player->verticalVelocity);
 }
 void RollState::render(Player* player, SDL_Renderer* renderer, SDL_Rect* camera)
 {
@@ -191,17 +210,111 @@ void RollState::render(Player* player, SDL_Renderer* renderer, SDL_Rect* camera)
 	}
 	
 }
-
+void JumpingState::initialize(Player* player) {
+	std::cout << " jump initialized " << maxSpeed << " " << player->speed << "\n";
+	maxSpeed = player->speed;
+}
 void JumpingState::handleInput(Player* player, ControllerManager* controller)
 {
 
+	player->moveBools[RIGHT] = false;
+	player->moveBools[LEFT] = false;
+	player->moveBools[UP] = false;
+	player->moveBools[DOWN] = false;
+
+	switch (controller->getFirstDpress())
+	{
+	case KEY_PRESS_UP:
+		player->moveBools[UP] = true;
+		break;
+	case KEY_PRESS_DOWN:
+		player->moveBools[DOWN] = true;
+		break;
+	case KEY_PRESS_LEFT:
+		player->moveBools[LEFT] = true;
+		break;
+	case KEY_PRESS_RIGHT:
+		player->moveBools[RIGHT] = true;
+		break;
+	}
+	switch (controller->getSecondDpress())
+	{
+	case KEY_PRESS_UP:
+		player->moveBools[UP] = true;
+		break;
+	case KEY_PRESS_DOWN:
+		player->moveBools[DOWN] = true;
+		break;
+	case KEY_PRESS_LEFT:
+		player->moveBools[LEFT] = true;
+		break;
+	case KEY_PRESS_RIGHT:
+		player->moveBools[RIGHT] = true;
+		break;
+	}
 }
 void JumpingState::update(Player* player) 
 {
+	if (player->moveBools[UP]) {
+		if (abs(player->verticalVelocity - player->speed) < maxSpeed) {
+			player->verticalVelocity -= player->speed;
+		}
+	}
+	else if (player->moveBools[DOWN]) {
+		if (abs(player->verticalVelocity + player->speed) < maxSpeed) {
+			player->verticalVelocity += player->speed;
+		}
+	}
+
+	if (player->moveBools[RIGHT]) {
+		if (abs(player->HorizontalVelocity + player->speed) < maxSpeed) {
+			player->HorizontalVelocity += player->speed;
+		}
+	}
+	else if (player->moveBools[LEFT]) {
+		if (abs(player->HorizontalVelocity - player->speed) < maxSpeed) {
+			player->HorizontalVelocity -= player->speed;
+		}
+	}
+
+	//if (player->HorizontalVelocity != 0 && player->verticalVelocity != 0) {
+	//	// used to normalize diagonal movement. otherwise diagonal movement f e e l s slightly faster
+	//	player->verticalVelocity *= DIAGONAL_FACTOR;
+	//	player->HorizontalVelocity *= DIAGONAL_FACTOR;
+	//}
+	
+	player->move(player->HorizontalVelocity, player->verticalVelocity);
+	player->moveSprite(player->HorizontalVelocity, player->verticalVelocity);
 }
 void JumpingState::render(Player* player, SDL_Renderer* renderer, SDL_Rect* camera)
 {
+	//std::cout << player->verticalVelocity - player->speed << " " << maxSpeed << "\n";
+	//std::cout << player->HorizontalVelocity - player->speed << " " << maxSpeed << "\n";
+	int offset = -((-(505/504) * pow((int)(player->frameNum / player->animationDelay), 2)) + ((7135/504) * (int)(player->frameNum / player->animationDelay)) + 30);
+	
 
+	switch (player->direction)
+	{
+	case DOWN:
+		player->renderSprite(renderer, &player->rollingDownSprites[(player->frameNum / player->animationDelay) % 6], SDL_FLIP_NONE, camera, 0, offset);
+		break;
+	case LEFT:
+		player->renderSprite(renderer, &player->rollingLeftSprites[(player->frameNum / player->animationDelay) % 6], SDL_FLIP_NONE, camera, 0, offset);
+		break;
+	case RIGHT:
+		player->renderSprite(renderer, &player->rollingLeftSprites[(player->frameNum / player->animationDelay) % 6], SDL_FLIP_HORIZONTAL, camera, 0, offset);
+		break;
+	case UP:
+		player->renderSprite(renderer, &player->rollingUpSprites[(player->frameNum / player->animationDelay) % 6], SDL_FLIP_NONE, camera, 0, offset);
+		break;
+	}
+
+	// end at 8th frame
+	player->frameNum++;
+	if (player->frameNum / player->animationDelay >= 16) {
+		changeState(player, WalkingState::instance());
+	}
+	
 }
 
 
@@ -259,13 +372,13 @@ void Player::render(SDL_Renderer* _renderer, SDL_Rect* camera)
 
 	_state->render(this, _renderer, camera);
 
-	drawCollisionBox(_renderer, camera);
-	drawGOPoint(_renderer, camera);
+	//drawCollisionBox(_renderer, camera);
+	//drawGOPoint(_renderer, camera);
 }
 
 void Player::onCollision(Collider* other)
 {
-	if (other->getType() == TYPE_WALL)
+	if (other->getType() == TYPE_PUSHOUT)
 	{
 		int startColliderx = getCenterx();
 		int startCollidery = getCentery();

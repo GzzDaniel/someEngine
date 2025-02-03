@@ -17,6 +17,8 @@ enum Keypress {
 
 	// key specific
 	KEY_PRESS_SHIFT,
+	KEY_PRESS_SPACE,
+	KEY_RELE_SPACE,
 
 	// actions
 	KEY_PRESS_INTERACT,
