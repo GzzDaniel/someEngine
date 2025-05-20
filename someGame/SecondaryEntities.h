@@ -11,14 +11,16 @@
 #include "controllermanager.h"
 #include "player.h"
 
-class Obstacle : public GameObject, public Collider, public SpriteRenderer
+class Obstacle : public GameObject, public ColliderManager, public SpriteRenderer
 {
 public:
 	Obstacle(int x, int y) :
 		GameObject(x, y),
-		Collider(x, y, 80, 80, TYPE_PUSHOUT),
 		SpriteRenderer(x-50, y-50, 100, 100, 1)
-	{}
+	{
+		Collider c(x, y, 80, 80, TYPE_PUSHOUT);
+		addNewCollider(0, c);
+	}
 	~Obstacle() {}
 	void defineSrcSprites() {
 		quad = { 126, 64, 32, 32 };
@@ -26,13 +28,37 @@ public:
 	void update() override {}
 	void render(SDL_Renderer* _renderer, SDL_Rect* camera) override
 	{ //renderSprite(_renderer, &quad, SDL_FLIP_NONE); 
-		renderSprite(_renderer, &quad, SDL_FLIP_NONE, camera);
+		//renderSprite(_renderer, &quad, SDL_FLIP_NONE, camera);
 		//drawCollisionBox(_renderer, camera);
 	}
 
 private:
 	SDL_Rect quad;
 };
+class Table : public GameObject, public ColliderManager, public SpriteRenderer
+{
+public:
+	Table(int x, int y) :
+		GameObject(x, y),
+		
+		SpriteRenderer(x, y, 48, 32, 2, -24, -12)
+	{
+		Collider c(x, y, 48 * 2, 19, TYPE_PUSHOUT, 0, 10);
+		addNewCollider(0, c);
+	}
+	~Table() {}
+	void defineSrcSprites() {
+	}
+	void update() override {}
+	void render(SDL_Renderer* _renderer, SDL_Rect* camera) override
+	{ 
+		renderSprite(_renderer, 0, SDL_FLIP_NONE, camera);
+		drawCollisionBoxes(_renderer, camera);
+		drawGOPoint(_renderer, camera);
+	}
+
+};
+
 class Background : public SpriteRenderer
 {
 public:

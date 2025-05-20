@@ -76,7 +76,7 @@ class Subject
 protected:
 	GameObject* inputobserverArray[5] = { 0 };
 	GameObject* observerArray[5] = { 0 };
-	Collider* collidersArray[5] = { 0 };
+	ColliderManager* collidersArray[5] = { 0 };
 	SpriteRenderer* rendersArray[5] = { 0 };
 	int numRenderedObservers;
 	int numInputObservers;
@@ -100,7 +100,7 @@ public:
 		numInputObservers++;
 		addObserver(_observer);
 	}
-	void addColliderObserver(Collider* _observer) {
+	void addColliderObserver(ColliderManager* _observer) {
 		collidersArray[numColliderObservers] = _observer;
 		numColliderObservers++;
 	}
@@ -246,14 +246,16 @@ private:
 			observerArray[i]->update();
 		}
 
-		// TODO use a smarter implementation for checking collisions
+		// TODO use a faster implementation for checking collisions
 		for (int i = 0; i < numColliderObservers; i++)
 		{
-			for (int j = 0; j < numColliderObservers; j++) {
+			for (int j = i+1; j < numColliderObservers; j++) {
 				if (i != j) {
-					if (collidersArray[i]->isColliding(collidersArray[j])) {
+					/*if (collidersArray[i]->areColliding(collidersArray[j])) {
 						collidersArray[i]->onCollision(collidersArray[j]);
-					}
+					}*/
+					
+					collidersArray[i]->areColliding(collidersArray[j]);
 				}
 			}
 		}
@@ -284,8 +286,10 @@ private:
 		}
 
 
-		// renders all gameObjects and then switches buffers
+		// renders all gameObjects 
+		// TODO Ysort camera
 		for (int i = 0; i < numRenderedObservers; i++) {
+
 			rendersArray[i]->render(_renderer, &Camera);
 		}
 		//Update screen

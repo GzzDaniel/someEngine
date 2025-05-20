@@ -364,7 +364,8 @@ void Player::handleInput(ControllerManager* controller)
 void Player::update() 
 {
 	_state->update(this);
-	setColliderCenter((int)getxPos() + getColliderOffsetx(), (int)getyPos() + getColliderOffsety());
+	//setColliderCenter((int)getxPos() + getColliderOffsetx(), (int)getyPos() + getColliderOffsety());
+	setColliderArrayCenter((int)getxPos(), (int)getyPos());
 }
 void Player::render(SDL_Renderer* _renderer, SDL_Rect* camera)
 {
@@ -373,45 +374,57 @@ void Player::render(SDL_Renderer* _renderer, SDL_Rect* camera)
 	_state->render(this, _renderer, camera);
 
 	//drawCollisionBox(_renderer, camera);
-	//drawGOPoint(_renderer, camera);
+	drawCollisionBoxes(_renderer, camera);
+	drawGOPoint(_renderer, camera);
 }
 
-void Player::onCollision(Collider* other)
+void Player::onCollision(Collider* thisCollider, Collider* other)
 {
+
 	if (other->getType() == TYPE_PUSHOUT)
 	{
-		int startColliderx = getCenterx();
-		int startCollidery = getCentery();
+		int startColliderx = thisCollider->getCenterx();
+		int startCollidery = thisCollider->getCentery();
 
-		switch (getPrevCollision(other))
+		switch (thisCollider->getPrevCollision(other))
 		{
 		case TYPE_VERTICAL:
-			
-			if ((getPrevCentery() - getCentery()) > 0) {
+
+			if ((thisCollider->getPrevCentery() - thisCollider->getCentery()) > 0) {
 				// bottom up
-				setColliderCenter(getCenterx(), other->getCentery() + other->getHalfHeight() + getHalfHeight());
+				std::cout << "colliding from bottom \n";
+				setColliderArrayCenter(thisCollider->getCenterx(), other->getCentery() + other->getHalfHeight() + thisCollider->getHalfHeight(), false);
 			}
-			else if ((getPrevCentery() - getCentery()) < 0) {
+			else if ((thisCollider->getPrevCentery() - thisCollider->getCentery()) < 0) {
 				// up to bottom
-				setColliderCenter(getCenterx(), other->getCentery() - other->getHalfHeight() - getHalfHeight());
+				std::cout << "colliding from top \n";
+				setColliderArrayCenter(thisCollider->getCenterx(), other->getCentery() - other->getHalfHeight() - thisCollider->getHalfHeight(), false);
 			}
 			break;
 
 		case TYPE_HORIZONTAL:
 			
-			if ((getPrevCenterx() - getCenterx()) > 0) {
+			if ((thisCollider->getPrevCenterx() - thisCollider->getCenterx()) > 0) {
 				// right to left
-				setColliderCenter(other->getCenterx() + other->getHalfWidth() + getHalfWidth(), getCentery());
+				std::cout << "colliding from right \n";
+				setColliderArrayCenter(other->getCenterx() + other->getHalfWidth() + thisCollider->getHalfWidth(), thisCollider->getCentery(), false);
 			}
-			else if ((getPrevCenterx() - getCenterx()) < 0) {
+			else if ((thisCollider->getPrevCenterx() - thisCollider->getCenterx()) < 0) {
 				// left to right
-				setColliderCenter(other->getCenterx() - other->getHalfWidth() - getHalfWidth(), getCentery());
+				std::cout << "colliding from left \n";
+				setColliderArrayCenter(other->getCenterx() - other->getHalfWidth() - thisCollider->getHalfWidth(), thisCollider->getCentery(), false);
 			}
 			break;
-		}
+		case TYPE_TOTAL:
 
-		int colliderDifx = getCenterx() - startColliderx;
-		int colliderDify = getCentery() - startCollidery;
+			break;
+		case TYPE_NONE:
+			break;
+		}
+		
+
+		int colliderDifx = thisCollider->getCenterx() - startColliderx;
+		int colliderDify = thisCollider->getCentery() - startCollidery;
 
 		moveSprite(colliderDifx, colliderDify);
 		move(colliderDifx, colliderDify);

@@ -10,7 +10,8 @@
 #include "controllermanager.h"
 #include "gameObject.h"
 
-double const DIAGONAL_FACTOR = 0.7071067811865476;
+//0.7071067811865476
+double const DIAGONAL_FACTOR = 0.7071;
 
 enum PlayerDirection {
 	DOWN,
@@ -134,13 +135,12 @@ public:
 };
 
 
-class Player : public GameObject, public Collider, public SpriteRenderer
+class Player : public GameObject, public ColliderManager, public SpriteRenderer
 {
 public:
 
 	Player(int posx, int posy, int scale) :
 		GameObject(posx, posy),
-		Collider(posx, posy, 30, 30, TYPE_PLAYER, 0, -10),
 		SpriteRenderer(posx, posy, 32, 32, scale, -16, -27),
 		scale(scale),
 
@@ -156,6 +156,9 @@ public:
 
 		_state(IdleState::instance())
 	{
+		Collider col(posx, posy, 30, 30, TYPE_PLAYER, 0, -10);
+		addNewCollider(IDLE ,col);
+
 	}
 	~Player() { }
 
@@ -163,7 +166,7 @@ public:
 	void render(SDL_Renderer* _renderer, SDL_Rect* camera) override;
 
 	void update() override;
-	void onCollision(Collider* other) override;
+	void onCollision(Collider* pc1, Collider* pc2) override;
 	//void onNotify(Event _event) override;
 
 	void handleInput(ControllerManager* CM) override;

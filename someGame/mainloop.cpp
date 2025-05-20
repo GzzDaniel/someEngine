@@ -12,19 +12,21 @@ void makePlayer() {
 	pe->addRenderedObserver(link);
 	pe->addCameraTarget(link);
 }
+
 int main(int argc, char* args[])
 {
 	Background bg;
 	bg.loadmedia(_renderer, "bg.png");
 	engine.addRenderedObserver(&bg);
 
-	Obstacle f(250, 200);
-	f.loadmedia(_renderer, "stuff.png");
+	makePlayer();
+
+	Table f(250, 200);
+	f.loadmedia(_renderer, "table.png");
 	engine.addObserver(&f);
 	engine.addRenderedObserver(&f);
 	engine.addColliderObserver(&f);
 	
-	makePlayer();
 	engine.run();
 
 	return 0;

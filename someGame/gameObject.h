@@ -7,6 +7,8 @@
 #include <string>
 #include <iostream>
 #include <cmath>
+#include <vector>
+#include <map>
 
 #include "controllermanager.h"
 
@@ -34,6 +36,7 @@ public:
 	double virtual getxPos();
 	double virtual getyPos();
 
+	// shows a point where the x and y position values for the gameobject object is
 	void drawGOPoint(SDL_Renderer* renderer, SDL_Rect* camera) {
 		SDL_SetRenderDrawColor(renderer, 0xFF, 0x00, 0x00, 0xFF);
 		SDL_RenderDrawPoint(renderer, (int)xpos - camera->x, (int)ypos - camera->y);
@@ -131,8 +134,8 @@ public:
 		centery(centery+yOffset),
 		halfWidth(w / 2),
 		halfHeight(h / 2),
-		prevCenterx(centerx),
-		prevCentery(centery),
+		prevCenterx(centerx + xOffset),
+		prevCentery(centery + yOffset),
 		xOffset(xOffset),
 		yOffset(yOffset)
 	{}
@@ -159,7 +162,7 @@ public:
 	// returns the previous frame collision for direction detection
 	CollisionType getPrevCollision(Collider* c);
 
-	// handle collision with other colliders
+	// handle collision with other colliders, to be used inside child classes
 	void virtual onCollision(Collider* c) {}
 
 	int getHalfWidth() { return halfWidth; }
@@ -190,6 +193,69 @@ private:
 	int yOffset;
 };
 
+// Manages the different collider arrays for an object, a map stores the different arrays
+class ColliderManager
+{
+public:
+	ColliderManager() : activeArray(nullptr) {}
+	virtual ~ColliderManager() {}
+
+	void addNewCollider(int id, Collider c) {
+		colliders[id].push_back(c);
+		if (!activeArray) {
+			activeArray = &colliders[id];
+		}
+	}
+	void changeCollider(int id) {
+		activeArray = &colliders[id];
+	}
+	std::vector<Collider>* getActiveArray() {
+		return activeArray;
+	}
+
+	// handle collision with other colliders, to be used inside child classes
+	void virtual onCollision(Collider* pc1, Collider* pc2) {}
+
+	void areColliding(ColliderManager* cm)
+	{
+		for (Collider &collider1 : *activeArray) {
+			for (Collider &collider2 : *cm->getActiveArray()) {
+				if (collider1.isColliding(&collider2)) {
+					onCollision(&collider1, &collider2);
+					// TODO maybe a return or break 
+				}
+			}
+		}
+	}
+	// sets collider based on a point colculating the proper location based on the offset
+	void setColliderArrayCenter(int x, int y, bool applyOffset = true)
+	{
+		// iterate through int, vector pairs
+		for (auto& pair : colliders) {
+			// iterate through array
+			for (auto &col : pair.second) {
+				if (applyOffset) {
+					//col.setColliderCenter(x + col.getColliderOffsetx(), y + col.getColliderOffsety());
+					col.setColliderCenter(x + col.getColliderOffsetx(), y + col.getColliderOffsety());
+				}
+				else {
+					col.setColliderCenter(x, y);
+				}
+			}
+		}
+	}
+
+	void drawCollisionBoxes(SDL_Renderer* renderer, SDL_Rect* camera) {
+		for (auto& col : *activeArray) {
+			col.drawCollisionBox(renderer, camera);
+		}
+	}
+
+private:
+	std::map<int, std::vector<Collider> > colliders;
+	std::vector<Collider>* activeArray;
+
+};
 
 
 #endif /*GAMEOBJECT_H_*/
