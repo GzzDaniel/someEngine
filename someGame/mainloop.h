@@ -7,6 +7,7 @@
 #include <string>
 #include <iostream>
 #include <cmath>
+#include <algorithm>
 
 #include "gameObject.h"
 #include "controllermanager.h"
@@ -74,35 +75,39 @@ void close() {
 class Subject
 {
 protected:
-	GameObject* inputobserverArray[5] = { 0 };
-	GameObject* observerArray[5] = { 0 };
-	ColliderManager* collidersArray[5] = { 0 };
-	SpriteRenderer* rendersArray[5] = { 0 };
-	int numRenderedObservers;
+	std::vector<GameObject*> inputobserverArray;
+	std::vector<GameObject*> observerArray;
+	std::vector<ColliderManager*> collidersArray;
+	std::vector<SpriteRenderer*> rendersArray;
+	/*int numRenderedObservers;
 	int numInputObservers;
 	int numObservers;
-	int numColliderObservers;
+	int numColliderObservers;*/
 
 public:
-	Subject() : numRenderedObservers(0), numInputObservers(0), numObservers(0), numColliderObservers(0)  { }
+	//Subject() : numRenderedObservers(0), numInputObservers(0), numObservers(0), numColliderObservers(0)  { }
 	virtual ~Subject() {}
 
 	void addObserver(GameObject* _observer) {
-		observerArray[numObservers] = _observer;
-		numObservers++;
+		//observerArray[numObservers] = _observer;
+		//numObservers++;
+		observerArray.push_back(_observer);
 	}
 	void addRenderedObserver(SpriteRenderer* _observer) {
-		rendersArray[numRenderedObservers] = _observer;
-		numRenderedObservers++;
+		//rendersArray[numRenderedObservers] = _observer;
+		//numRenderedObservers++;
+		rendersArray.push_back(_observer);
 	}
 	void addInputObserver(GameObject* _observer) {
-		inputobserverArray[numInputObservers] = _observer;
-		numInputObservers++;
+		//inputobserverArray[numInputObservers] = _observer;
+		//numInputObservers++;
 		addObserver(_observer);
+		inputobserverArray.push_back(_observer);
 	}
 	void addColliderObserver(ColliderManager* _observer) {
-		collidersArray[numColliderObservers] = _observer;
-		numColliderObservers++;
+		//collidersArray[numColliderObservers] = _observer;
+		//numColliderObservers++;
+		collidersArray.push_back(_observer);
 	}
 };
 
@@ -147,8 +152,11 @@ private:
 	GameObject* cameraTarget;
 	
 	void handleInput(ControllerManager* CMP) {
-		for (int i = 0; i < numInputObservers; i++) {
+		/*for (int i = 0; i < numInputObservers; i++) {
 			inputobserverArray[i]->handleInput(CMP);
+		}*/
+		for (auto& inputObserver : inputobserverArray) {
+			inputObserver->handleInput(CMP);
 		}
 	}
 
@@ -241,12 +249,17 @@ private:
 	}
 	void update() 
 	{		
-		for (int i = 0; i < numObservers; i++) 
-		{
-			observerArray[i]->update();
+		//for (int i = 0; i < numObservers; i++) 
+		//{
+		//	observerArray[i]->update();
+		//}
+		for (auto& observer : observerArray) {
+			observer->update();
 		}
 
 		// TODO use a faster implementation for checking collisions
+
+		int numColliderObservers = collidersArray.size();
 		for (int i = 0; i < numColliderObservers; i++)
 		{
 			for (int j = i+1; j < numColliderObservers; j++) {
@@ -288,10 +301,19 @@ private:
 
 		// renders all gameObjects 
 		// TODO Ysort camera
-		for (int i = 0; i < numRenderedObservers; i++) {
+		std::sort(rendersArray.begin(), rendersArray.end(), [](auto* a, auto* b) {
+			return a->getYcamValue() < b->getYcamValue();
+		});
 
-			rendersArray[i]->render(_renderer, &Camera);
+		//for (int i = 0; i < numRenderedObservers; i++) {
+		//	rendersArray[i]->render(_renderer, &Camera);
+		//}
+		for (auto& renderObserver : rendersArray) {
+			std::cout << renderObserver->getYcamValue() << " ";
+			renderObserver->render(_renderer, &Camera);
 		}
+		std::cout << '\n';
+
 		//Update screen
 		SDL_RenderPresent(_renderer);
 		//Clear screen

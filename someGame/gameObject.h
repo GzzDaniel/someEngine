@@ -15,6 +15,8 @@
 enum Event {
 	NUM_EVENTS
 };
+
+
 // GameObject class, some people call it Entity (I mighht change the name at some point). 
 // everything on screen is a GameObject
 class GameObject
@@ -42,6 +44,7 @@ public:
 		SDL_RenderDrawPoint(renderer, (int)xpos - camera->x, (int)ypos - camera->y);
 	}
 
+
 private:
 	double xpos;
 	double ypos;
@@ -53,7 +56,7 @@ private:
 class SpriteRenderer
 {
 public:
-	SpriteRenderer(double x, double y, int w, int h, double scale, int xOffset = 0, int yOffset = 0) :
+	SpriteRenderer(double x, double y, int w, int h, double scale, int xOffset = 0, int yOffset = 0, int Ycam = 10000) :
 		texture(NULL),
 		xPos(x),
 		yPos(y),
@@ -62,6 +65,7 @@ public:
 		scale(scale),
 		xOffset(xOffset),
 		yOffset(yOffset),
+		YcamValue(Ycam),
 		dstQuad({ (int)xPos, (int)yPos, (int)(width * scale), (int)(height * scale) })
 	{}
 	virtual ~SpriteRenderer() {}
@@ -90,8 +94,11 @@ public:
 	int getSpriteWidth() { return width; }
 	int getSpriteHeight() { return height; }
 
+	double getYcamValue() const { return YcamValue; }
+	void setYcamValue(int n) { YcamValue = n; }
 
 private:
+
 	double xPos;
 	double yPos;
 
@@ -99,6 +106,8 @@ private:
 	int height;
 
 	double scale;
+
+	int YcamValue;
 
 	int xOffset;
 	int yOffset;
@@ -111,6 +120,7 @@ private:
 
 
 enum CollisionType {
+	// Entities
 	TYPE_PLAYER,
 	TYPE_WALL,
 	TYPE_ENEMY,

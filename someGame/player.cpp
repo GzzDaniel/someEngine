@@ -363,6 +363,7 @@ void Player::handleInput(ControllerManager* controller)
 }
 void Player::update() 
 {
+	setYcamValue((int)getyPos());
 	_state->update(this);
 	//setColliderCenter((int)getxPos() + getColliderOffsetx(), (int)getyPos() + getColliderOffsety());
 	setColliderArrayCenter((int)getxPos(), (int)getyPos());

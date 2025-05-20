@@ -49,7 +49,9 @@ public:
 	~Table() {}
 	void defineSrcSprites() {
 	}
-	void update() override {}
+	void update() override {
+		setYcamValue((int)getyPos());
+	}
 	void render(SDL_Renderer* _renderer, SDL_Rect* camera) override
 	{ 
 		renderSprite(_renderer, 0, SDL_FLIP_NONE, camera);
@@ -62,7 +64,7 @@ public:
 class Background : public SpriteRenderer
 {
 public:
-	Background() : SpriteRenderer(0, 0, 900, 600, 1) { }
+	Background() : SpriteRenderer(0, 0, 900, 600, 1, 0, 0, -100) { }
 	~Background() {}
 	void render(SDL_Renderer* _renderer, SDL_Rect* camera) override {
 		renderSprite(_renderer, 0, SDL_FLIP_NONE, camera);
