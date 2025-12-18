@@ -61,7 +61,7 @@ public:
 	std::string getName() { return "Idle"; }
 
 private:
-	bool shiftPressed;
+	//bool shiftPressed;
 
 };
 
@@ -102,7 +102,8 @@ private:
 class JumpingState : public PlayerState
 {
 public:
-	~JumpingState() {}
+	JumpingState() : maxSpeed(0) {};
+	~JumpingState(){}
 	void handleInput(Player* player, ControllerManager* controller) override;
 	void update(Player* player) override;
 	void render(Player* player, SDL_Renderer* renderer, SDL_Rect* camera) override;
@@ -117,6 +118,7 @@ public:
 private:
 	double maxSpeed;
 };
+
 
 class AttackState : public PlayerState
 {
@@ -198,6 +200,8 @@ private:
 	SDL_Rect rollingLeftSprites[10];
 	SDL_Rect rollingUpSprites[10];
 	SDL_Rect shadowSprite;
+	SDL_Rect swordHorizontal;
+	SDL_Rect swordVertical;
 	int frameNum;
 
 	PlayerDirection direction;
@@ -217,9 +221,6 @@ private:
 	PlayerState* _state;
 
 };
-
-
-
 
 
 

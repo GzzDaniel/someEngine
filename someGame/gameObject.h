@@ -268,4 +268,19 @@ private:
 };
 
 
+class Tilemap
+{
+public:
+	Tilemap() {};
+	virtual ~Tilemap() {};
+
+private:
+	std::vector<std::vector<GameObject*>> tileArray;
+};
+
+
+
+
+
+
 #endif /*GAMEOBJECT_H_*/

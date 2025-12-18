@@ -35,12 +35,13 @@ void PlayerState::changeState(Player* player, PlayerState* state)
 void IdleState::handleInput(Player* player, ControllerManager* controller)  
 {
 	if(controller->getFirstDpress() != KEY_PRESS_NULL){
-		if (shiftPressed) {
+		/*if (shiftPressed) {
 			changeState(player, RollState::instance());
 		}
 		else {
 			changeState(player, WalkingState::instance());
-		}
+		}*/
+		changeState(player, WalkingState::instance());
 	}
 	if (controller->getLastKeyEvent() == KEY_PRESS_SPACE) {
 		changeState(player, JumpingState::instance());
@@ -290,7 +291,7 @@ void JumpingState::render(Player* player, SDL_Renderer* renderer, SDL_Rect* came
 {
 	//std::cout << player->verticalVelocity - player->speed << " " << maxSpeed << "\n";
 	//std::cout << player->HorizontalVelocity - player->speed << " " << maxSpeed << "\n";
-	int offset = -((-(505/504) * pow((int)(player->frameNum / player->animationDelay), 2)) + ((7135/504) * (int)(player->frameNum / player->animationDelay)) + 30);
+	int offset = (int)( -((-(505 / 504) * pow((int)(player->frameNum / player->animationDelay), 2)) + ((7135 / 504) * (int)(player->frameNum / player->animationDelay)) + 30));
 	
 
 	switch (player->direction)
@@ -317,6 +318,36 @@ void JumpingState::render(Player* player, SDL_Renderer* renderer, SDL_Rect* came
 	
 }
 
+void AttackState::handleInput(Player* player, ControllerManager* controller)
+{
+
+}
+
+void AttackState::update(Player* player)
+{
+	
+}
+
+void AttackState::render(Player* player, SDL_Renderer* renderer, SDL_Rect* camera)
+{
+	switch (player->direction)
+	{
+	case DOWN:
+		player->renderSprite(renderer, &player->rollingDownSprites[(player->frameNum / player->animationDelay) % 6], SDL_FLIP_NONE, camera, 0, offset);
+		break;
+	case LEFT:
+		player->renderSprite(renderer, &player->rollingLeftSprites[(player->frameNum / player->animationDelay) % 6], SDL_FLIP_NONE, camera, 0, offset);
+		break;
+	case RIGHT:
+		player->renderSprite(renderer, &player->rollingLeftSprites[(player->frameNum / player->animationDelay) % 6], SDL_FLIP_HORIZONTAL, camera, 0, offset);
+		break;
+	case UP:
+		player->renderSprite(renderer, &player->rollingUpSprites[(player->frameNum / player->animationDelay) % 6], SDL_FLIP_NONE, camera, 0, offset);
+		break;
+	}
+}
+
+
 
 void Player::defineSrcSprites()
 {
@@ -329,7 +360,13 @@ void Player::defineSrcSprites()
 	standingSprites[UP] = { 64, 0, spriteWidth, spriteHeight };
 
 	// OTHERS
+	
+	// shadow
 	shadowSprite = { 320, 0, spriteWidth, spriteHeight };
+
+	// sword
+	swordHorizontal = { 352, 0, 16, 16 };
+	swordVertical = { 368, 0, 16, 16 };
 
 	// WALKING
 	for (int i = 0; i < 10; i++){
@@ -353,7 +390,17 @@ void Player::defineSrcSprites()
 	for (int i = 0; i < 8; i++) {
 		rollingUpSprites[i] = { 576 + (32 * i), 64, spriteWidth, spriteHeight };
 	}
-	
+
+	// ATTACKING
+	for (int i = 0; i < 8; i++) {
+		rollingDownSprites[i] = { 0 + (32 * i), 96, spriteWidth, spriteHeight };
+	}
+	for (int i = 0; i < 8; i++) {
+		rollingLeftSprites[i] = { 288 + (32 * i), 96, spriteWidth, spriteHeight };
+	}
+	for (int i = 0; i < 8; i++) {
+		rollingUpSprites[i] = { 576 + (32 * i), 96, spriteWidth, spriteHeight };
+	}
 }
 
 

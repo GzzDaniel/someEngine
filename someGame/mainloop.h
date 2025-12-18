@@ -309,10 +309,9 @@ private:
 		//	rendersArray[i]->render(_renderer, &Camera);
 		//}
 		for (auto& renderObserver : rendersArray) {
-			std::cout << renderObserver->getYcamValue() << " ";
+			
 			renderObserver->render(_renderer, &Camera);
 		}
-		std::cout << '\n';
 
 		//Update screen
 		SDL_RenderPresent(_renderer);
