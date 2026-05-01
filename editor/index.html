@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>someEngine Editor</title>
+  <link rel="stylesheet" href="editor.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- TOP BAR -->
+  <div id="topbar">
+    <span id="logo">someEngine</span>
+    <div id="mode-tabs">
+      <button class="mode-tab active" data-mode="level">Level</button>
+      <button class="mode-tab" data-mode="prefab">Prefab</button>
+      <button class="mode-tab" data-mode="character">Character</button>
+    </div>
+    <div id="file-ops">
+      <button id="btn-save">Save Project</button>
+      <button id="btn-load">Load Project</button>
+      <button id="btn-export">Export JSON</button>
+      <input id="file-input" type="file" accept=".json" style="display:none">
+    </div>
+  </div>
+
+  <!-- MAIN AREA -->
+  <div id="main">
+
+    <!-- LEFT PANEL -->
+    <div id="left-panel">
+      <div id="left-panel-title"></div>
+      <div id="left-panel-content"></div>
+    </div>
+
+    <!-- CENTER: toolbar + canvas -->
+    <div id="center">
+      <div id="canvas-toolbar"></div>
+      <div id="canvas-wrap">
+        <canvas id="main-canvas"></canvas>
+        <!-- Sprite sheet canvas for character mode -->
+        <canvas id="sheet-canvas" style="display:none"></canvas>
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div id="right-panel">
+      <div id="right-panel-title"></div>
+      <div id="right-panel-content"></div>
+    </div>
+
+  </div>
+
+  <!-- BOTTOM PANEL (animation timeline / code editor) -->
+  <div id="bottom-panel">
+    <div id="bottom-tabs">
+      <button class="bottom-tab active" data-tab="timeline">Animation Timeline</button>
+      <button class="bottom-tab" data-tab="code">Behavior Code</button>
+    </div>
+    <div id="bottom-content"></div>
+  </div>
+
+</div>
+
+<!-- CONTEXT MENU -->
+<div id="ctx-menu" class="hidden">
+  <div class="ctx-item" id="ctx-delete">Delete Entity</div>
+  <div class="ctx-item" id="ctx-duplicate">Duplicate Entity</div>
+</div>
+
+<!-- NOTIFICATION -->
+<div id="notification" class="hidden"></div>
+
+<script src="editor.js"></script>
+</body>
+</html>
