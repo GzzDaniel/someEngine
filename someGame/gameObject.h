@@ -17,8 +17,11 @@ enum Event {
 };
 
 
-// GameObject class, some people call it Entity (I mighht change the name at some point). 
+// GameObject class, some people call it Entity (I mighht change the name at some point).
 // everything on screen is a GameObject
+// [Claude] xpos/ypos are the logical world-space position of the object.
+// SpriteRenderer has its own xPos/yPos which track where the sprite is drawn —
+// these two pairs are kept in sync via move() + moveSprite() calls in the state update loops.
 class GameObject
 {
 public:
@@ -28,17 +31,21 @@ public:
 
 	void virtual setxPos(double inxpos);
 	void virtual setyPos(double inypos);
+	// [Claude] move() shifts the logical position; call moveSprite() separately to keep sprite in sync
 	void virtual move(double inxmove, double inymove);
-	
+
+	// [Claude] handleInput() is only called on inputobserverArray members (not all observers),
+	// so not every GameObject needs to implement it — the empty default is intentional
 	void virtual handleInput(ControllerManager* CM) {}
 	void virtual update() = 0;
-	
+
 	void virtual onNotify(Event _event) {};
 
 	double virtual getxPos();
 	double virtual getyPos();
 
 	// shows a point where the x and y position values for the gameobject object is
+	// [Claude] useful debug helper — renders a red pixel at the object's logical origin
 	void drawGOPoint(SDL_Renderer* renderer, SDL_Rect* camera) {
 		SDL_SetRenderDrawColor(renderer, 0xFF, 0x00, 0x00, 0xFF);
 		SDL_RenderDrawPoint(renderer, (int)xpos - camera->x, (int)ypos - camera->y);
@@ -53,6 +60,9 @@ private:
 
 // stores the rendering of sprites values
 // TODO make a variable pointer for Renderer and avoid having to input it in every render function
+// [Claude] xOffset/yOffset shift the sprite's draw position relative to the GameObject's logical origin.
+// e.g. Player uses (-16, -27) so the sprite is centered above the feet rather than the top-left corner.
+// YcamValue controls Y-sort draw order — lower value = drawn first (behind). Default 10000 = drawn last (front).
 class SpriteRenderer
 {
 public:
@@ -73,11 +83,14 @@ public:
 	void moveSprite(double x, double y);
 
 	// define the quads for each sprite
+	// [Claude] called automatically at the end of loadmedia() so sprites are ready right after texture loads
 	void virtual defineSrcSprites() {}
 
 	void loadmedia(SDL_Renderer* _renderer, std::string path);
 
-	// calculates the quad renders a copy based on the gameObjects position
+	// calculates the quad and renders a copy based on the gameObjects position
+	// [Claude] srcQuad can be NULL to render the full texture (SDL behaviour); offsetx/offsety are per-call
+	// extra nudges on top of the permanent xOffset/yOffset baked into the SpriteRenderer
 	void renderSprite(SDL_Renderer* renderer, SDL_Rect* srcQuad, SDL_RendererFlip flip, SDL_Rect* camera, int offsetx = 0, int offsety = 0);
 
 	// render logic at each frame
@@ -89,6 +102,7 @@ public:
 	double getSpritePosx() { return xPos; }
 	double getSpritePosy() { return yPos; }
 	void setSpritePosx(double x) { xPos = x + (xOffset * scale); }
+	// TODO [Claude] BUG: uses xOffset instead of yOffset — y position will be offset by the wrong axis
 	void setSpritePosy(double y) { yPos = y + (xOffset * scale); }
 
 	int getSpriteWidth() { return width; }
@@ -204,12 +218,16 @@ private:
 };
 
 // Manages the different collider arrays for an object, a map stores the different arrays
+// [Claude] The idea: one object can have multiple collider "sets" (e.g. idle hitbox vs attack hitbox).
+// Each set is stored under an int id. Only the activeArray is checked for collisions each frame.
+// changeCollider(id) swaps which set is active — used when the player changes state.
 class ColliderManager
 {
 public:
 	ColliderManager() : activeArray(nullptr) {}
 	virtual ~ColliderManager() {}
 
+	// [Claude] first collider added automatically becomes the active array
 	void addNewCollider(int id, Collider c) {
 		colliders[id].push_back(c);
 		if (!activeArray) {
@@ -232,12 +250,15 @@ public:
 			for (Collider &collider2 : *cm->getActiveArray()) {
 				if (collider1.isColliding(&collider2)) {
 					onCollision(&collider1, &collider2);
-					// TODO maybe a return or break 
+					// TODO maybe a return or break
 				}
 			}
 		}
 	}
-	// sets collider based on a point colculating the proper location based on the offset
+	// sets collider based on a point calculating the proper location based on the offset
+	// [Claude] applyOffset=true (default) repositions each collider relative to its own stored offset,
+	// so e.g. the player's foot collider stays at the feet even when the logical origin moves.
+	// applyOffset=false is used during collision pushout to hard-set the position without re-adding offsets.
 	void setColliderArrayCenter(int x, int y, bool applyOffset = true)
 	{
 		// iterate through int, vector pairs
@@ -245,7 +266,6 @@ public:
 			// iterate through array
 			for (auto &col : pair.second) {
 				if (applyOffset) {
-					//col.setColliderCenter(x + col.getColliderOffsetx(), y + col.getColliderOffsety());
 					col.setColliderCenter(x + col.getColliderOffsetx(), y + col.getColliderOffsety());
 				}
 				else {

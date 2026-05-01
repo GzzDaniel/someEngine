@@ -141,6 +141,10 @@ class Player : public GameObject, public ColliderManager, public SpriteRenderer
 {
 public:
 
+	// [Claude] xOffset=-16, yOffset=-27 on SpriteRenderer: the 32x32 sprite sheet cell is drawn
+	// so its horizontal center and lower portion align with the logical origin (the "feet" point).
+	// animationDelay=3 means each sprite frame is held for 3 game updates before advancing.
+	// The single collider uses yOffset=-10 to sit slightly above the origin (ankle-level).
 	Player(int posx, int posy, int scale) :
 		GameObject(posx, posy),
 		SpriteRenderer(posx, posy, 32, 32, scale, -16, -27),
@@ -159,6 +163,8 @@ public:
 		_state(IdleState::instance())
 	{
 		Collider col(posx, posy, 30, 30, TYPE_PLAYER, 0, -10);
+		// [Claude] IDLE (enum value 0) is used as the collider set id here.
+		// Only one collider set exists right now; changeCollider() would swap to others if added.
 		addNewCollider(IDLE ,col);
 
 	}
@@ -183,11 +189,15 @@ public:
 	}
 
 private:
+	// TODO [Claude] BUG: AttackState is missing from the friend list but its render() accesses
+	// private members (rollingDownSprites, rollingLeftSprites, rollingUpSprites, frameNum,
+	// animationDelay, direction). This will fail to compile once AttackState::render() is used.
 	friend class WalkingState;
 	friend class IdleState;
 	friend class RollState;
 	friend class PlayerState;
 	friend class JumpingState;
+	// friend class AttackState; // TODO [Claude] uncomment when AttackState is fully implemented
 
 	int scale;
 
