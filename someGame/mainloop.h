@@ -27,8 +27,17 @@ bool running = true;
 SDL_Event sdl_event;
 
 
+// TODO [Claude] BUG: accumulator should be a double (or float), not Uint32.
+// SDL_GetTicks() returns milliseconds as Uint32, so deltaTime is fine as Uint32,
+// but accumulator is compared against 1.0/61.0 (~0.016) which truncates to 0 when
+// stored back into a Uint32 — the subtraction never decreases accumulator, causing
+// an infinite loop inside run(). Fix: declare accumulator (and ideally deltaTime) as double,
+// and convert SDL_GetTicks() results to seconds (divide by 1000.0) before accumulating.
 Uint32 deltaTime=0 , oldTime=0, accumulator=0;
 
+// TODO [Claude] BUG: camera width should be SCREEN_WIDTH (640), not SCREEN_HEIGHT (480).
+// As-is the camera rect is 480x480 instead of 640x480, so the right edge of the screen
+// is never included in Camera.w bounds checks in display().
 SDL_Rect Camera = {0, 0, SCREEN_HEIGHT, SCREEN_HEIGHT};
 
 bool initializeSDL()
@@ -72,6 +81,12 @@ void close() {
 }
 
 
+// [Claude] Subject is the engine's observer registry.
+// Four separate arrays because not every object needs all four roles:
+//   observerArray      — receives update() every frame
+//   inputobserverArray — receives handleInput() on key events (also added to observerArray via addInputObserver)
+//   collidersArray     — participates in collision detection pairs each frame
+//   rendersArray       — rendered each frame, Y-sorted before drawing
 class Subject
 {
 protected:
@@ -135,8 +150,13 @@ public:
 			oldTime = SDL_GetTicks();
 			accumulator += deltaTime;
 
-			while (accumulator > 1.0 / 61.0)
-			{	
+			// TODO [Claude] BUG: two mismatches here —
+		// 1) The threshold (1.0/61.0) and subtraction (1.0/59.0) use different frame rates.
+		//    Both should use the same target rate, e.g. both 1.0/60.0.
+		// 2) Because accumulator is Uint32 (see declaration above), the floating-point
+		//    subtraction result truncates to 0 and accumulator never drains — infinite loop.
+		while (accumulator > 1.0 / 61.0)
+			{
 				update();
 				accumulator = accumulator - (1.0 / 59.0);
 				if (accumulator < 0) accumulator = 0;
@@ -258,7 +278,9 @@ private:
 		}
 
 		// TODO use a faster implementation for checking collisions
-
+		// [Claude] current approach is O(n^2) pairs. The i+1 start avoids checking the same pair twice
+		// (A vs B and B vs A), which is why areColliding() only needs to be called once per pair.
+		// Note: the `if (i != j)` check is always true because j starts at i+1, so it can be removed.
 		int numColliderObservers = collidersArray.size();
 		for (int i = 0; i < numColliderObservers; i++)
 		{

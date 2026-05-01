@@ -1,6 +1,9 @@
 #include "player.h"
 
-void PlayerState::changeState(Player* player, PlayerState* state) 
+// [Claude] changeState() is the single place that handles all state transition side-effects.
+// It resets frameNum so animations start from frame 0 in the new state, then adjusts
+// speed/velocity to the values appropriate for that state.
+void PlayerState::changeState(Player* player, PlayerState* state)
 {
 	player->frameNum = 0;
 	std::cout << "changed states from " << player->getState()->getName() << " to " << state->getName() << "\n";
@@ -9,11 +12,15 @@ void PlayerState::changeState(Player* player, PlayerState* state)
 	// changes for the next state
 	switch (state->getStateID()) {
 	case ROLLING:
+		// [Claude] roll doubles current speed/velocity so the player launches in the direction
+		// they were already moving rather than resetting to a fixed roll speed
 		player->speed *= 2;
 		player->HorizontalVelocity *= 2;
 		player->verticalVelocity *= 2;
 		break;
 	case IDLE:
+		// [Claude] speed *= 0 instead of speed = 0 was probably intentional to zero it out
+		// without caring about the previous value; same effect but less readable
 		player->speed *= 0;
 		for (int i = 0; i < 4; i++) {
 			player->moveBools[i] = false;
@@ -23,13 +30,15 @@ void PlayerState::changeState(Player* player, PlayerState* state)
 		player->diagonalFactor = 1;
 		break;
 	case JUMPING:
+		// [Claude] initialize() must be called AFTER changeState() so the new _state pointer is
+		// set before initialize() captures player->speed into JumpingState::maxSpeed
 		player->_state->initialize(player);
 		player->speed = 0.0005;
 		break;
 	case WALKING:
 		player->speed = 0.18;
-	}	
-	
+	}
+
 }
 
 void IdleState::handleInput(Player* player, ControllerManager* controller)  
@@ -254,8 +263,15 @@ void JumpingState::handleInput(Player* player, ControllerManager* controller)
 		break;
 	}
 }
-void JumpingState::update(Player* player) 
+// [Claude] JumpingState builds up velocity gradually (acceleration) capped at maxSpeed,
+// rather than setting velocity directly like WalkingState does. maxSpeed is captured from
+// player->speed at the moment the jump starts (see initialize()), so the jump speed cap
+// matches whatever speed the player had when they jumped.
+void JumpingState::update(Player* player)
 {
+	// TODO [Claude] abs() is called on double values but without std:: qualifier.
+	// Depending on the compiler, unqualified abs() may resolve to C's abs(int), truncating
+	// the double argument and making the cap check incorrect. Use std::abs() to be safe.
 	if (player->moveBools[UP]) {
 		if (abs(player->verticalVelocity - player->speed) < maxSpeed) {
 			player->verticalVelocity -= player->speed;
@@ -291,6 +307,11 @@ void JumpingState::render(Player* player, SDL_Renderer* renderer, SDL_Rect* came
 {
 	//std::cout << player->verticalVelocity - player->speed << " " << maxSpeed << "\n";
 	//std::cout << player->HorizontalVelocity - player->speed << " " << maxSpeed << "\n";
+	// [Claude] offset is a vertical pixel nudge passed to renderSprite to fake a jump arc.
+	// The formula is a downward-opening parabola in frame-number space — the sprite lifts up
+	// then comes back down over the 16-frame jump window (frameNum/animationDelay goes 0..15).
+	// Constants 505/504 and 7135/504 are the parabola coefficients; the outer negation flips
+	// the result so positive offset = upward shift on screen.
 	int offset = (int)( -((-(505 / 504) * pow((int)(player->frameNum / player->animationDelay), 2)) + ((7135 / 504) * (int)(player->frameNum / player->animationDelay)) + 30));
 	
 
@@ -330,9 +351,15 @@ void AttackState::update(Player* player)
 
 void AttackState::render(Player* player, SDL_Renderer* renderer, SDL_Rect* camera)
 {
+	// TODO [Claude] BUG: `offset` is not declared in this scope — it is a local variable in
+	// JumpingState::render(). This will not compile. Decide what offset should be here
+	// (likely 0, or a new attack-specific vertical nudge) and declare it before this switch.
 	switch (player->direction)
 	{
 	case DOWN:
+		// TODO [Claude] BUG: rollingDownSprites[] is the wrong array — it holds rolling animation
+		// frames, not attack frames (see defineSrcSprites where attack sprites overwrite rolling ones).
+		// Add a dedicated attackDownSprites[] array to Player and use that here.
 		player->renderSprite(renderer, &player->rollingDownSprites[(player->frameNum / player->animationDelay) % 6], SDL_FLIP_NONE, camera, 0, offset);
 		break;
 	case LEFT:
@@ -381,6 +408,7 @@ void Player::defineSrcSprites()
 	}
 
 	// ROLLIMG
+	// [Claude] sprite sheet row y=64 holds the rolling frames (8 per direction)
 	for (int i = 0; i < 8; i++) {
 		rollingDownSprites[i] = { 0 + (32 * i), 64, spriteWidth, spriteHeight };
 	}
@@ -392,6 +420,12 @@ void Player::defineSrcSprites()
 	}
 
 	// ATTACKING
+	// TODO [Claude] BUG: the attack frames are being written into rollingDownSprites[],
+	// rollingLeftSprites[], and rollingUpSprites[], completely overwriting the rolling data set
+	// just above. The rolling animation will show attack frames when played. Fix: add dedicated
+	// attackDownSprites[], attackLeftSprites[], attackUpSprites[] arrays to the Player class
+	// (8 elements each, same as rolling) and write the y=96 row coords into those instead.
+	// [Claude] sprite sheet row y=96 holds the attacking frames (8 per direction)
 	for (int i = 0; i < 8; i++) {
 		rollingDownSprites[i] = { 0 + (32 * i), 96, spriteWidth, spriteHeight };
 	}
@@ -426,6 +460,11 @@ void Player::render(SDL_Renderer* _renderer, SDL_Rect* camera)
 	drawGOPoint(_renderer, camera);
 }
 
+// [Claude] onCollision() implements AABB pushout: when the player overlaps a TYPE_PUSHOUT collider,
+// the player is repositioned to just outside the obstacle edge. Direction is determined by
+// getPrevCollision() which checks where the player was the *previous frame* before penetrating.
+// After repositioning the collider, the delta is applied to the sprite and logical position too
+// so all three stay in sync (collider, sprite, and GameObject xpos/ypos).
 void Player::onCollision(Collider* thisCollider, Collider* other)
 {
 
@@ -434,6 +473,11 @@ void Player::onCollision(Collider* thisCollider, Collider* other)
 		int startColliderx = thisCollider->getCenterx();
 		int startCollidery = thisCollider->getCentery();
 
+		// [Claude] getPrevCollision() returns which axis was NOT overlapping last frame,
+		// which tells us the direction the player came from (entered along that axis).
+		// TYPE_VERTICAL means the x axis was clear last frame → player entered horizontally.
+		// TYPE_HORIZONTAL means the y axis was clear last frame → player entered vertically.
+		// TYPE_TOTAL means both axes overlapped last frame → player was already inside (no pushout).
 		switch (thisCollider->getPrevCollision(other))
 		{
 		case TYPE_VERTICAL:
@@ -451,7 +495,7 @@ void Player::onCollision(Collider* thisCollider, Collider* other)
 			break;
 
 		case TYPE_HORIZONTAL:
-			
+
 			if ((thisCollider->getPrevCenterx() - thisCollider->getCenterx()) > 0) {
 				// right to left
 				std::cout << "colliding from right \n";
@@ -464,18 +508,20 @@ void Player::onCollision(Collider* thisCollider, Collider* other)
 			}
 			break;
 		case TYPE_TOTAL:
-
+			// [Claude] player was already inside the collider last frame — no safe pushout direction,
+			// so we do nothing. Can happen on first frame of overlap if deltaTime was large.
 			break;
 		case TYPE_NONE:
 			break;
 		}
-		
+
 
 		int colliderDifx = thisCollider->getCenterx() - startColliderx;
 		int colliderDify = thisCollider->getCentery() - startCollidery;
 
+		// [Claude] apply the same displacement to sprite and logical position so nothing drifts apart
 		moveSprite(colliderDifx, colliderDify);
 		move(colliderDifx, colliderDify);
 	}
-	
+
 }
