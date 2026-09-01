@@ -28,19 +28,91 @@ void PlayerState::changeState(Player* player, PlayerState* state)
 		break;
 	case WALKING:
 		player->speed = 0.18;
-	}	
-	
+	}		
+}
+
+void Player::updateDirection(ControllerManager* controller)
+{
+	moveBools[RIGHT] = false;
+	moveBools[LEFT] = false;
+	moveBools[UP] = false;
+	moveBools[DOWN] = false;
+
+	// The first dpress determines the direction in which the player faces.
+	// currently this only affects the sprite that is rendered, but it could be used for other things like attacks or rolls.
+	switch (controller->getFirstDpress())
+	{
+	case KEY_PRESS_UP:
+		direction = UP;
+		moveBools[UP] = true;
+		break;
+	case KEY_PRESS_DOWN:
+		direction = DOWN;
+		moveBools[DOWN] = true;
+		
+		break;
+	case KEY_PRESS_LEFT:
+		direction = LEFT;
+		moveBools[LEFT] = true;
+		break;
+	case KEY_PRESS_RIGHT:
+		direction = RIGHT;
+		moveBools[RIGHT] = true;
+		break;
+	}
+	switch (controller->getSecondDpress())
+	{
+	case KEY_PRESS_UP:
+		moveBools[UP] = true;
+		break;
+	case KEY_PRESS_DOWN:
+		moveBools[DOWN] = true;
+		break;
+	case KEY_PRESS_LEFT:
+		moveBools[LEFT] = true;
+		break;
+	case KEY_PRESS_RIGHT:
+		moveBools[RIGHT] = true;
+		break;
+	}
+}
+
+void Player::moveCharacter() 
+{
+	// TODO Dynamic and Static classes, or maybe only dynamic bc it adds move functiuons based on velocity. it will store the
+   // Velocity variables
+	verticalVelocity = 0;
+	HorizontalVelocity = 0;
+
+	if (moveBools[UP]) {
+		std::cout << "UP\n";
+		verticalVelocity = -speed;
+	}
+	else if (moveBools[DOWN]) {
+		verticalVelocity = speed;
+	}
+
+	if (moveBools[RIGHT]) {
+		HorizontalVelocity = speed;
+	}
+	else if (moveBools[LEFT]) {
+		HorizontalVelocity = -speed;
+	}
+
+	if (HorizontalVelocity != 0 && verticalVelocity != 0) {
+		// used to normalize diagonal movement. otherwise diagonal movement f e e l s slightly faster
+		verticalVelocity *= DIAGONAL_FACTOR;
+		HorizontalVelocity *= DIAGONAL_FACTOR;
+	}
+
+	move(HorizontalVelocity, verticalVelocity);
+	moveSprite(HorizontalVelocity, verticalVelocity);
 }
 
 void IdleState::handleInput(Player* player, ControllerManager* controller)  
 {
 	if(controller->getFirstDpress() != KEY_PRESS_NULL){
-		/*if (shiftPressed) {
-			changeState(player, RollState::instance());
-		}
-		else {
-			changeState(player, WalkingState::instance());
-		}*/
+		player->updateDirection(controller);
 		changeState(player, WalkingState::instance());
 	}
 	if (controller->getLastKeyEvent() == KEY_PRESS_SPACE) {
@@ -65,47 +137,11 @@ void IdleState::render(Player* player, SDL_Renderer* renderer, SDL_Rect* camera)
 // TODO give variables to WalkingState Class and make it legible
 void WalkingState::handleInput(Player* player, ControllerManager* controller)  
 {
-	player->moveBools[RIGHT] = false;
-	player->moveBools[LEFT] = false;
-	player->moveBools[UP] = false;
-	player->moveBools[DOWN] = false;
-
-	switch (controller->getFirstDpress())
-	{
-	case KEY_PRESS_UP:
-		player->direction = UP;
-		player->moveBools[UP] = true;
-		break;
-	case KEY_PRESS_DOWN:
-		player->direction = DOWN;
-		player->moveBools[DOWN] = true;
-		break;
-	case KEY_PRESS_LEFT:
-		player->direction = LEFT;
-		player->moveBools[LEFT] = true;
-		break;
-	case KEY_PRESS_RIGHT:
-		player->direction = RIGHT;
-		player->moveBools[RIGHT] = true;
-		break;
-	default:
-		player->frameNum = 0;
+	if (controller->getFirstDpress() == KEY_PRESS_NULL) {
 		changeState(player, IdleState::instance());
 	}
-	switch (controller->getSecondDpress())
-	{
-	case KEY_PRESS_UP:
-		player->moveBools[UP] = true;
-		break;
-	case KEY_PRESS_DOWN:
-		player->moveBools[DOWN] = true;
-		break;
-	case KEY_PRESS_LEFT:
-		player->moveBools[LEFT] = true;
-		break;
-	case KEY_PRESS_RIGHT:
-		player->moveBools[RIGHT] = true;
-		break;
+	else {
+		player->updateDirection(controller);
 	}
 	switch (controller->getLastKeyEvent())
 	{
@@ -118,37 +154,8 @@ void WalkingState::handleInput(Player* player, ControllerManager* controller)
 	}
 
 }
-void WalkingState::update(Player* player)  
-{
-	 // TODO Dynamic and Static classes, or maybe only dynamic bc it adds move functiuons based on velocity. it will store the
-	// Velocity variables
-	player->verticalVelocity = 0;
-	player->HorizontalVelocity = 0;
-
-	if (player->moveBools[UP]) {
-		player->verticalVelocity = -player->speed ;
-	}
-	else if (player->moveBools[DOWN]) {
-		player->verticalVelocity = player->speed;
-	}
-
-	if (player->moveBools[RIGHT]) {
-		player->HorizontalVelocity = player->speed;
-	}
-	else if (player->moveBools[LEFT]) {
-		player->HorizontalVelocity = -player->speed;
-	}
-
-	if (player->HorizontalVelocity != 0 && player->verticalVelocity != 0) {
-		// used to normalize diagonal movement. otherwise diagonal movement f e e l s slightly faster
-		player->verticalVelocity *= DIAGONAL_FACTOR;
-		player->HorizontalVelocity *= DIAGONAL_FACTOR;
-	}
-	
-	player->move(player->HorizontalVelocity, player->verticalVelocity);
-	player->moveSprite(player->HorizontalVelocity, player->verticalVelocity);
-
-	
+void WalkingState::update(Player* player)  {
+	player->moveCharacter();
 }
 void WalkingState::render(Player* player, SDL_Renderer* renderer, SDL_Rect* camera)
 {
@@ -330,7 +337,7 @@ void AttackState::update(Player* player)
 
 void AttackState::render(Player* player, SDL_Renderer* renderer, SDL_Rect* camera)
 {
-	switch (player->direction)
+	/*switch (player->direction)
 	{
 	case DOWN:
 		player->renderSprite(renderer, &player->rollingDownSprites[(player->frameNum / player->animationDelay) % 6], SDL_FLIP_NONE, camera, 0, offset);
@@ -344,10 +351,21 @@ void AttackState::render(Player* player, SDL_Renderer* renderer, SDL_Rect* camer
 	case UP:
 		player->renderSprite(renderer, &player->rollingUpSprites[(player->frameNum / player->animationDelay) % 6], SDL_FLIP_NONE, camera, 0, offset);
 		break;
-	}
+	}*/
 }
 
+void LockedInState::handleInput(Player* player, ControllerManager* controller)
+{
 
+}
+
+void LockedInState::update(Player* player)
+{
+}
+
+void LockedInState::render(Player* player, SDL_Renderer* renderer, SDL_Rect* camera)
+{
+}
 
 void Player::defineSrcSprites()
 {
@@ -393,20 +411,25 @@ void Player::defineSrcSprites()
 
 	// ATTACKING
 	for (int i = 0; i < 8; i++) {
-		rollingDownSprites[i] = { 0 + (32 * i), 96, spriteWidth, spriteHeight };
+		attackDownSprites[i] = { 0 + (32 * i), 96, spriteWidth, spriteHeight };
 	}
 	for (int i = 0; i < 8; i++) {
-		rollingLeftSprites[i] = { 288 + (32 * i), 96, spriteWidth, spriteHeight };
+		attackLeftSprites[i] = { 288 + (32 * i), 96, spriteWidth, spriteHeight };
 	}
 	for (int i = 0; i < 8; i++) {
-		rollingUpSprites[i] = { 576 + (32 * i), 96, spriteWidth, spriteHeight };
+		attackUpSprites[i] = { 576 + (32 * i), 96, spriteWidth, spriteHeight };
 	}
 }
 
 
 void Player::handleInput(ControllerManager* controller)
 {
+	std::cout << "player handle input \n";
 	_state->handleInput(this, controller);
+	if (controller->isKeyPressed(KEY_PRESS_SHIFT))
+	{
+		changeState(LockedInState::instance());
+	}
 }
 void Player::update() 
 {
@@ -478,4 +501,14 @@ void Player::onCollision(Collider* thisCollider, Collider* other)
 		move(colliderDifx, colliderDify);
 	}
 	
+}
+
+
+// LOCK IN SYSTEM
+double getAngle(const Player& player, const GameObject& to)
+{
+	double dx = to.getxPos() - player.getxPos();
+	double dy = to.getyPos() - player.getyPos();
+
+	return std::atan2(dy, dx);
 }

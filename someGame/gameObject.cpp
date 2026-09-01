@@ -12,10 +12,10 @@ void GameObject::move(double inxmove, double inymove) {
 	xpos = xpos + inxmove;
 	ypos = ypos + inymove;
 }
-double GameObject::getxPos() {
+double GameObject::getxPos() const{
 	return xpos;
 }
-double GameObject::getyPos() {
+double GameObject::getyPos() const {
 	return ypos;
 }
 

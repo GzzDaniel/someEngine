@@ -63,6 +63,10 @@ bool ControllerManager::isKeyPressed(Keypress k)
 {
 	return KeysPressed[k];
 }
+bool ControllerManager::isDpadPressed()
+{
+	return (KeysPressed[KEY_PRESS_UP] || KeysPressed[KEY_PRESS_DOWN] || KeysPressed[KEY_PRESS_LEFT] || KeysPressed[KEY_PRESS_RIGHT]);
+}
 Keypress ControllerManager::getHorizontalDpress()
 {
 	// the keys pressed later take priority
@@ -140,10 +144,34 @@ Keypress ControllerManager::getSecondDpress()
 		return ver;
 	}
 }
-void ControllerManager::showDeque() {
-	for (int i = 0; i < 4; i++) {
-		std::cout << keypressDeque[i] << " ";
+
+const char* keypressToString(Keypress key)
+{
+	switch (key)
+	{
+	case KEY_PRESS_NULL:     return "KEY_PRESS_NULL";
+	case KEY_PRESS_UP:       return "KEY_PRESS_UP";
+	case KEY_PRESS_RIGHT:    return "KEY_PRESS_RIGHT";
+	case KEY_PRESS_DOWN:     return "KEY_PRESS_DOWN";
+	case KEY_PRESS_LEFT:     return "KEY_PRESS_LEFT";
+	case KEY_PRESS_SHIFT:    return "KEY_PRESS_SHIFT";
+	case KEY_PRESS_SPACE:    return "KEY_PRESS_SPACE";
+	case KEY_RELE_SPACE:     return "KEY_RELE_SPACE";
+	case KEY_PRESS_CTRL:     return "KEY_PRESS_CTRL";
+	case KEY_RELE_CTRL:      return "KEY_RELE_CTRL";
+	case KEY_PRESS_INTERACT: return "KEY_PRESS_INTERACT";
+	case KEY_RELE_SHIFT:     return "KEY_RELE_SHIFT";
+	default:                 return "UNKNOWN";
 	}
+}
+
+void ControllerManager::showDeque()
+{
+	for (int i = 0; i < 4; i++)
+	{
+		std::cout << keypressToString(keypressDeque[i]) << " ";
+	}
+
 	std::cout << "\n";
 }
 

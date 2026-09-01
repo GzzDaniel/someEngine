@@ -71,45 +71,37 @@ void close() {
 	SDL_Quit();
 }
 
-
+// engine class is a subclass of Subject, 
+// used to have observers like renderes, input managers, etc
 class Subject
 {
 protected:
-	std::vector<GameObject*> inputobserverArray;
 	std::vector<GameObject*> observerArray;
+	// all gameobjects can be clasifies as any of the following:
+	std::vector<GameObject*> inputobserverArray;
 	std::vector<ColliderManager*> collidersArray;
 	std::vector<SpriteRenderer*> rendersArray;
-	/*int numRenderedObservers;
-	int numInputObservers;
-	int numObservers;
-	int numColliderObservers;*/
+
 
 public:
-	//Subject() : numRenderedObservers(0), numInputObservers(0), numObservers(0), numColliderObservers(0)  { }
 	virtual ~Subject() {}
 
+	// obervers will be added at mainlop.cpp
 	void addObserver(GameObject* _observer) {
-		//observerArray[numObservers] = _observer;
-		//numObservers++;
 		observerArray.push_back(_observer);
 	}
 	void addRenderedObserver(SpriteRenderer* _observer) {
-		//rendersArray[numRenderedObservers] = _observer;
-		//numRenderedObservers++;
 		rendersArray.push_back(_observer);
 	}
 	void addInputObserver(GameObject* _observer) {
-		//inputobserverArray[numInputObservers] = _observer;
-		//numInputObservers++;
 		addObserver(_observer);
 		inputobserverArray.push_back(_observer);
 	}
 	void addColliderObserver(ColliderManager* _observer) {
-		//collidersArray[numColliderObservers] = _observer;
-		//numColliderObservers++;
 		collidersArray.push_back(_observer);
 	}
 };
+
 
 class Engine : public Subject
 {
@@ -123,26 +115,29 @@ public:
 			std::cout << "error initializing" << std::endl;
 		}
 	}
+
 	~Engine() { close(); }
 
 	void run()
 	{
+		// loop taken from Tyler Glaiels article
+		// https://medium.com/geekculture/how-to-make-your-own-game-engine-and-why-ddf0acbc5f3
 		while (running)
 		{
+
 			input();
 
 			deltaTime = SDL_GetTicks() - oldTime;
 			oldTime = SDL_GetTicks();
 			accumulator += deltaTime;
-
 			while (accumulator > 1.0 / 61.0)
 			{	
 				update();
 				accumulator = accumulator - (1.0 / 59.0);
 				if (accumulator < 0) accumulator = 0;
 			}
+
 			display();
-			
 		}
 	}
 	
@@ -151,12 +146,14 @@ public:
 private:
 	GameObject* cameraTarget;
 	
-	void handleInput(ControllerManager* CMP) {
+	void handleInput(ControllerManager* controller) {
 		/*for (int i = 0; i < numInputObservers; i++) {
 			inputobserverArray[i]->handleInput(CMP);
 		}*/
 		for (auto& inputObserver : inputobserverArray) {
-			inputObserver->handleInput(CMP);
+			inputObserver->handleInput(controller);
+			std::cout << "controller was checked" << std::endl;
+			controller->showDeque();
 		}
 	}
 
@@ -202,6 +199,11 @@ private:
 					_controllerManager.setLastKeyEvent(KEY_PRESS_SPACE);
 					handleInput(&_controllerManager);
 					break;
+				case SDLK_LCTRL:
+					//std::cout << "ctrl pressed" << std::endl;
+					_controllerManager.setLastKeyEvent(KEY_PRESS_CTRL);
+					handleInput(&_controllerManager);
+					break;
 				}
 			}
 			else if (sdl_event.type == SDL_KEYUP) {
@@ -209,23 +211,27 @@ private:
 				{
 				case SDLK_UP:
 				case SDLK_w:
-					_controllerManager.releaseDpadKey(KEY_PRESS_UP); handleInput(&_controllerManager);
+					_controllerManager.releaseDpadKey(KEY_PRESS_UP); 
+					handleInput(&_controllerManager);
 					//std::cout << "up released" << std::endl;
 					break;
 				case SDLK_DOWN:
 				case SDLK_s:
 					//std::cout << "down released" << std::endl;
-					_controllerManager.releaseDpadKey(KEY_PRESS_DOWN); handleInput(&_controllerManager);
+					_controllerManager.releaseDpadKey(KEY_PRESS_DOWN); 
+					handleInput(&_controllerManager);
 					break;
 				case SDLK_LEFT:
 				case SDLK_a:
 					//std::cout << "left released" << std::endl;
-					_controllerManager.releaseDpadKey(KEY_PRESS_LEFT); handleInput(&_controllerManager);
+					_controllerManager.releaseDpadKey(KEY_PRESS_LEFT); 
+					handleInput(&_controllerManager);
 					break;
 				case SDLK_RIGHT:
 				case SDLK_d:
 					//std::cout << "right released" << std::endl;
-					_controllerManager.releaseDpadKey(KEY_PRESS_RIGHT); handleInput(&_controllerManager);
+					_controllerManager.releaseDpadKey(KEY_PRESS_RIGHT); 
+					handleInput(&_controllerManager);
 					break;
 				case SDLK_LSHIFT:
 					//std::cout << "shift released" << std::endl;
@@ -244,15 +250,12 @@ private:
 		_controllerManager.setLastKeyEvent(KEY_PRESS_NULL);
 
 		// notifies all observers to read all current inputs
-		handleInput(&_controllerManager);
+		//handleInput(&_controllerManager);
 		return;
 	}
 	void update() 
 	{		
-		//for (int i = 0; i < numObservers; i++) 
-		//{
-		//	observerArray[i]->update();
-		//}
+
 		for (auto& observer : observerArray) {
 			observer->update();
 		}
@@ -264,9 +267,6 @@ private:
 		{
 			for (int j = i+1; j < numColliderObservers; j++) {
 				if (i != j) {
-					/*if (collidersArray[i]->areColliding(collidersArray[j])) {
-						collidersArray[i]->onCollision(collidersArray[j]);
-					}*/
 					
 					collidersArray[i]->areColliding(collidersArray[j]);
 				}
@@ -274,6 +274,7 @@ private:
 		}
 		return;
 	}
+
 	void display() 
 	{
 		Camera.x = cameraTarget->getxPos() - SCREEN_WIDTH/2;

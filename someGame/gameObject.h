@@ -17,7 +17,7 @@ enum Event {
 };
 
 
-// GameObject class, some people call it Entity (I mighht change the name at some point). 
+// GameObject class, some people call it Entity (I might change the name at some point). 
 // everything on screen is a GameObject
 class GameObject
 {
@@ -35,8 +35,8 @@ public:
 	
 	void virtual onNotify(Event _event) {};
 
-	double virtual getxPos();
-	double virtual getyPos();
+	double virtual getxPos() const;
+	double virtual getyPos() const;
 
 	// shows a point where the x and y position values for the gameobject object is
 	void drawGOPoint(SDL_Renderer* renderer, SDL_Rect* camera) {
@@ -135,6 +135,7 @@ enum CollisionType {
 	TYPE_TOTAL,
 	TYPE_NONE
 };
+// TODO there is a bug where it doesnt detect collision when corners meet
 class Collider
 {
 public:

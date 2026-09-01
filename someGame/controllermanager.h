@@ -19,6 +19,8 @@ enum Keypress {
 	KEY_PRESS_SHIFT,
 	KEY_PRESS_SPACE,
 	KEY_RELE_SPACE,
+	KEY_PRESS_CTRL,
+	KEY_RELE_CTRL,
 
 	// actions
 	KEY_PRESS_INTERACT,
@@ -53,6 +55,9 @@ public:
 	//returns true if the keypress given was pressed
 	bool isKeyPressed(Keypress k);
 
+	//returns true if any dpad button is pressed
+	bool isDpadPressed();
+
 	//prints the deque
 	void showDeque();
 
@@ -66,7 +71,7 @@ public:
 	Keypress getLastKeyEvent();
 
 private:
-	// array of boolean values for the keypresses
+	// array of boolean values for the keypresses. ie if index 1 is true then up is pressed
 	bool KeysPressed[NUM_KEY_STATES] = { false };
 
 	// use to keep track of the index

@@ -10,6 +10,7 @@
 #include "controllermanager.h"
 #include "gameObject.h"
 
+//Diagonal factor constant, reduces the speed of the player to prevent moving at 1,1 speed when moving diagonally.
 //0.7071067811865476
 double const DIAGONAL_FACTOR = 0.7071;
 
@@ -26,7 +27,9 @@ enum PlayerStateID {
 	WALKING,
 	ROLLING,
 	JUMPING,
-	ATTACKING
+	ATTACKING,
+	LOCKEDIN,
+	NUMBER_OF_STATES
 };
 
 // forward declare for the state classes
@@ -136,6 +139,29 @@ public:
 
 };
 
+class LockedInState : public PlayerState
+{
+public:
+	~LockedInState() {}
+
+	void handleInput(Player* player, ControllerManager* controller) override;
+	void update(Player* player) override;
+	void render(Player* player, SDL_Renderer* renderer, SDL_Rect* camera) override;
+
+	static PlayerState* instance() {
+		static LockedInState inst;
+		return &inst;
+	}
+
+	PlayerStateID getStateID() override {
+		return LOCKEDIN;
+	}
+
+	std::string getName() override {
+		return "locked in";
+	}
+};
+
 
 class Player : public GameObject, public ColliderManager, public SpriteRenderer
 {
@@ -181,7 +207,8 @@ public:
 	PlayerState* getState() {
 		return _state;
 	}
-
+	void updateDirection(ControllerManager* controller);
+	void moveCharacter();
 private:
 	friend class WalkingState;
 	friend class IdleState;
@@ -199,6 +226,9 @@ private:
 	SDL_Rect rollingDownSprites[10];
 	SDL_Rect rollingLeftSprites[10];
 	SDL_Rect rollingUpSprites[10];
+	SDL_Rect attackDownSprites[8];
+	SDL_Rect attackLeftSprites[8];
+	SDL_Rect attackUpSprites[8];
 	SDL_Rect shadowSprite;
 	SDL_Rect swordHorizontal;
 	SDL_Rect swordVertical;
@@ -221,7 +251,5 @@ private:
 	PlayerState* _state;
 
 };
-
-
 
 #endif /* PLAYER_H_ */
