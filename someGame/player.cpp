@@ -1,6 +1,6 @@
 #include "player.h"
 
-void PlayerState::changeState(Player* player, PlayerState* state) 
+void PlayerState::changeState(Player* player, PlayerState* state, ControllerManager* controller) 
 {
 	player->frameNum = 0;
 	std::cout << "changed states from " << player->getState()->getName() << " to " << state->getName() << "\n";
@@ -8,27 +8,32 @@ void PlayerState::changeState(Player* player, PlayerState* state)
 
 	// changes for the next state
 	switch (state->getStateID()) {
-	case ROLLING:
-		player->speed *= 2;
-		player->HorizontalVelocity *= 2;
-		player->verticalVelocity *= 2;
-		break;
-	case IDLE:
-		player->speed *= 0;
-		for (int i = 0; i < 4; i++) {
-			player->moveBools[i] = false;
-		}
-		player->verticalVelocity = 0;
-		player->HorizontalVelocity = 0;
-		player->diagonalFactor = 1;
-		break;
-	case JUMPING:
-		player->_state->initialize(player);
-		player->speed = 0.0005;
-		break;
-	case WALKING:
-		player->speed = 0.18;
-	}		
+		case ROLLING:
+			state->setStateDirection(player->direction);
+			player->speed *= 2;
+			player->HorizontalVelocity *= 2;
+			player->verticalVelocity *= 2;
+			break;
+		case IDLE:
+			player->speed *= 0;
+			for (int i = 0; i < 4; i++) {
+				player->moveBools[i] = false;
+			}
+			player->verticalVelocity = 0;
+			player->HorizontalVelocity = 0;
+			player->diagonalFactor = 1;
+			break;
+		case JUMPING:
+			state->setStateDirection(player->direction);
+			player->_state->initialize(player);
+			player->speed = 0.0005;
+			break;
+		case WALKING:
+			if (controller != nullptr) {
+				player->updateDirection(controller);
+			}
+			player->speed = 0.18;
+		}		
 }
 
 void Player::updateDirection(ControllerManager* controller)
@@ -112,11 +117,11 @@ void Player::moveCharacter()
 void IdleState::handleInput(Player* player, ControllerManager* controller)  
 {
 	if(controller->getFirstDpress() != KEY_PRESS_NULL){
-		player->updateDirection(controller);
-		changeState(player, WalkingState::instance());
+		
+		changeState(player, WalkingState::instance(), controller);
 	}
 	if (controller->getLastKeyEvent() == KEY_PRESS_SPACE) {
-		changeState(player, JumpingState::instance());
+		changeState(player, JumpingState::instance(), controller);
 	}
 }
 void IdleState::update(Player* player)  
@@ -185,7 +190,7 @@ void WalkingState::render(Player* player, SDL_Renderer* renderer, SDL_Rect* came
 void RollState::handleInput(Player* player, ControllerManager* controller)  
 {
 	if (controller->getLastKeyEvent() == KEY_PRESS_SPACE && player->frameNum > 4) {
-		changeState(player, JumpingState::instance());
+		changeState(player, JumpingState::instance(), controller);
 	}
 }
 void RollState::update(Player* player)  
@@ -195,7 +200,7 @@ void RollState::update(Player* player)
 }
 void RollState::render(Player* player, SDL_Renderer* renderer, SDL_Rect* camera)
 {
-	switch (player->direction)
+	switch (getStateDirection())
 	{
 	case DOWN:
 		player->renderSprite(renderer, &player->rollingDownSprites[player->frameNum / player->animationDelay], SDL_FLIP_NONE, camera);
@@ -225,41 +230,6 @@ void JumpingState::initialize(Player* player) {
 void JumpingState::handleInput(Player* player, ControllerManager* controller)
 {
 
-	player->moveBools[RIGHT] = false;
-	player->moveBools[LEFT] = false;
-	player->moveBools[UP] = false;
-	player->moveBools[DOWN] = false;
-
-	switch (controller->getFirstDpress())
-	{
-	case KEY_PRESS_UP:
-		player->moveBools[UP] = true;
-		break;
-	case KEY_PRESS_DOWN:
-		player->moveBools[DOWN] = true;
-		break;
-	case KEY_PRESS_LEFT:
-		player->moveBools[LEFT] = true;
-		break;
-	case KEY_PRESS_RIGHT:
-		player->moveBools[RIGHT] = true;
-		break;
-	}
-	switch (controller->getSecondDpress())
-	{
-	case KEY_PRESS_UP:
-		player->moveBools[UP] = true;
-		break;
-	case KEY_PRESS_DOWN:
-		player->moveBools[DOWN] = true;
-		break;
-	case KEY_PRESS_LEFT:
-		player->moveBools[LEFT] = true;
-		break;
-	case KEY_PRESS_RIGHT:
-		player->moveBools[RIGHT] = true;
-		break;
-	}
 }
 void JumpingState::update(Player* player) 
 {
@@ -285,12 +255,6 @@ void JumpingState::update(Player* player)
 		}
 	}
 
-	//if (player->HorizontalVelocity != 0 && player->verticalVelocity != 0) {
-	//	// used to normalize diagonal movement. otherwise diagonal movement f e e l s slightly faster
-	//	player->verticalVelocity *= DIAGONAL_FACTOR;
-	//	player->HorizontalVelocity *= DIAGONAL_FACTOR;
-	//}
-	
 	player->move(player->HorizontalVelocity, player->verticalVelocity);
 	player->moveSprite(player->HorizontalVelocity, player->verticalVelocity);
 }
@@ -301,7 +265,7 @@ void JumpingState::render(Player* player, SDL_Renderer* renderer, SDL_Rect* came
 	int offset = (int)( -((-(505 / 504) * pow((int)(player->frameNum / player->animationDelay), 2)) + ((7135 / 504) * (int)(player->frameNum / player->animationDelay)) + 30));
 	
 
-	switch (player->direction)
+	switch (getStateDirection())
 	{
 	case DOWN:
 		player->renderSprite(renderer, &player->rollingDownSprites[(player->frameNum / player->animationDelay) % 6], SDL_FLIP_NONE, camera, 0, offset);
@@ -425,11 +389,8 @@ void Player::defineSrcSprites()
 void Player::handleInput(ControllerManager* controller)
 {
 	std::cout << "player handle input \n";
+	updateDirection(controller);
 	_state->handleInput(this, controller);
-	if (controller->isKeyPressed(KEY_PRESS_SHIFT))
-	{
-		changeState(LockedInState::instance());
-	}
 }
 void Player::update() 
 {

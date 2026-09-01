@@ -147,9 +147,6 @@ private:
 	GameObject* cameraTarget;
 	
 	void handleInput(ControllerManager* controller) {
-		/*for (int i = 0; i < numInputObservers; i++) {
-			inputobserverArray[i]->handleInput(CMP);
-		}*/
 		for (auto& inputObserver : inputobserverArray) {
 			inputObserver->handleInput(controller);
 			std::cout << "controller was checked" << std::endl;

@@ -38,15 +38,23 @@ class Player;
 class PlayerState
 {
 public:
-	virtual ~PlayerState() {}
+	PlayerState()
+		: stateDirection(DOWN)
+	{
+	}
+	virtual ~PlayerState(){}
 	virtual void handleInput(Player* player, ControllerManager* controller) {}
 	virtual void update(Player* player) {}
 	virtual void render(Player* player, SDL_Renderer* renderer, SDL_Rect* camera) {}
 	virtual PlayerStateID getStateID() = 0;
 	virtual std::string getName() = 0;
 	virtual void initialize(Player* player) {};
+	void setStateDirection(PlayerDirection dir) { stateDirection = dir; }
+	PlayerDirection getStateDirection() { return stateDirection; }
 protected:
-	void changeState(Player* player, PlayerState* state);
+	void changeState(Player* player, PlayerState* state, ControllerManager* controller = nullptr);
+private:
+	PlayerDirection stateDirection;
 };
 
 class IdleState : public PlayerState
