@@ -24,6 +24,7 @@ enum Keypress {
 
 	// actions
 	KEY_PRESS_INTERACT,
+	KEY_PRESS_ATTACK,
 
 	// key releases
 	KEY_RELE_SHIFT,

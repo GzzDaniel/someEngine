@@ -67,6 +67,7 @@ bool ControllerManager::isDpadPressed()
 {
 	return (KeysPressed[KEY_PRESS_UP] || KeysPressed[KEY_PRESS_DOWN] || KeysPressed[KEY_PRESS_LEFT] || KeysPressed[KEY_PRESS_RIGHT]);
 }
+
 Keypress ControllerManager::getHorizontalDpress()
 {
 	// the keys pressed later take priority
@@ -93,6 +94,7 @@ Keypress ControllerManager::getHorizontalDpress()
 	// none pressed
 	return KEY_PRESS_NULL;
 }
+
 Keypress ControllerManager::getVerticalDpress()
 {
 	// the keys pressed later take priority
@@ -119,6 +121,7 @@ Keypress ControllerManager::getVerticalDpress()
 	// none pressed
 	return KEY_PRESS_NULL;
 }
+
 //gets earliest press
 Keypress ControllerManager::getFirstDpress()
 {

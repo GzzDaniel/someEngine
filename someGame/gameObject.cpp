@@ -46,7 +46,12 @@ void SpriteRenderer::moveSprite(double x, double y)
 }
 void SpriteRenderer::renderSprite(SDL_Renderer* renderer, SDL_Rect* srcQuad, SDL_RendererFlip flip, SDL_Rect* camera, int inOffsetx, int inOffsety)
 {
-	dstQuad = { (int)(xPos - camera->x + inOffsetx + (xOffset * scale)), (int)(yPos - camera->y + inOffsety + (yOffset * scale)), (int)(width * scale), (int)(height * scale) };
+	dstQuad = {
+	(int)(xPos - camera->x + (inOffsetx * scale) + (xOffset * scale)),
+	(int)(yPos - camera->y + (inOffsety * scale) + (yOffset * scale)),
+	(int)(width * scale),
+	(int)(height * scale)
+	};
 	
 	SDL_RenderCopyEx(renderer, texture, srcQuad, &dstQuad, 0, NULL, flip);
 }

@@ -5,7 +5,7 @@ void PlayerState::changeState(Player* player, PlayerState* state, ControllerMana
 	player->frameNum = 0;
 	std::cout << "changed states from " << player->getState()->getName() << " to " << state->getName() << "\n";
 	player->changeState(state);
-
+	// TODO refactor
 	// changes for the next state
 	switch (state->getStateID()) {
 		case ROLLING:
@@ -29,9 +29,9 @@ void PlayerState::changeState(Player* player, PlayerState* state, ControllerMana
 			player->speed = 0.0005;
 			break;
 		case WALKING:
-			if (controller != nullptr) {
-				player->updateDirection(controller);
-			}
+			player->verticalVelocity = 0;
+			player->HorizontalVelocity = 0;
+			player->diagonalFactor = 1;
 			player->speed = 0.18;
 		}		
 }
@@ -90,7 +90,6 @@ void Player::moveCharacter()
 	HorizontalVelocity = 0;
 
 	if (moveBools[UP]) {
-		std::cout << "UP\n";
 		verticalVelocity = -speed;
 	}
 	else if (moveBools[DOWN]) {
@@ -120,8 +119,14 @@ void IdleState::handleInput(Player* player, ControllerManager* controller)
 		
 		changeState(player, WalkingState::instance(), controller);
 	}
-	if (controller->getLastKeyEvent() == KEY_PRESS_SPACE) {
-		changeState(player, JumpingState::instance(), controller);
+	switch (controller->getLastKeyEvent())
+	{
+	case KEY_PRESS_SPACE:
+		changeState(player, JumpingState::instance());
+		break;
+	case KEY_PRESS_ATTACK:
+		changeState(player, AttackState::instance());
+		break;
 	}
 }
 void IdleState::update(Player* player)  
@@ -155,6 +160,9 @@ void WalkingState::handleInput(Player* player, ControllerManager* controller)
 		break;
 	case KEY_PRESS_SPACE:
 		changeState(player, JumpingState::instance());
+		break;
+	case KEY_PRESS_ATTACK:
+		changeState(player, AttackState::instance());
 		break;
 	}
 
@@ -219,12 +227,16 @@ void RollState::render(Player* player, SDL_Renderer* renderer, SDL_Rect* camera)
 	// end at 8th frame
 	player->frameNum++;
 	if (player->frameNum / player->animationDelay >= 8) {
-		changeState(player, WalkingState::instance());
+		if (player->willMove()) {
+			changeState(player, WalkingState::instance());
+		}
+		else {
+			changeState(player, IdleState::instance());
+		}
 	}
 	
 }
 void JumpingState::initialize(Player* player) {
-	std::cout << " jump initialized " << maxSpeed << " " << player->speed << "\n";
 	maxSpeed = player->speed;
 }
 void JumpingState::handleInput(Player* player, ControllerManager* controller)
@@ -284,14 +296,23 @@ void JumpingState::render(Player* player, SDL_Renderer* renderer, SDL_Rect* came
 	// end at 8th frame
 	player->frameNum++;
 	if (player->frameNum / player->animationDelay >= 16) {
-		changeState(player, WalkingState::instance());
+		if (player->willMove()) {
+			changeState(player, WalkingState::instance());
+		}
+		else {
+			changeState(player, IdleState::instance());
+		}
 	}
-	
 }
 
 void AttackState::handleInput(Player* player, ControllerManager* controller)
 {
-
+	switch (controller->getLastKeyEvent())
+	{
+	case KEY_PRESS_ATTACK:
+		changeState(player, AttackState::instance());
+		break;
+	}
 }
 
 void AttackState::update(Player* player)
@@ -301,22 +322,216 @@ void AttackState::update(Player* player)
 
 void AttackState::render(Player* player, SDL_Renderer* renderer, SDL_Rect* camera)
 {
-	/*switch (player->direction)
+	int spriteDuration = 2;
+	int spriteToRender = player->frameNum / spriteDuration;
+
+	switch (player->direction)
 	{
 	case DOWN:
-		player->renderSprite(renderer, &player->rollingDownSprites[(player->frameNum / player->animationDelay) % 6], SDL_FLIP_NONE, camera, 0, offset);
+		switch (spriteToRender)
+		{
+		case 0:
+			player->renderSprite(renderer, &player->attackDownSprites[0], SDL_FLIP_NONE, camera, 0, 0);
+			player->renderSprite(renderer, &player->swordVerticalSprites[0], SDL_FLIP_NONE, camera, -8, 6);
+			break;
+
+		case 1:
+			player->renderSprite(renderer, &player->attackDownSprites[1], SDL_FLIP_NONE, camera, 0, 0);
+			player->renderSprite(renderer, &player->swordVerticalSprites[1], SDL_FLIP_NONE, camera, -3, 14);
+			break;
+
+		case 2:
+			player->renderSprite(renderer, &player->attackDownSprites[2], SDL_FLIP_NONE, camera, 0, 0);
+			player->renderSprite(renderer, &player->swordVerticalSprites[2], SDL_FLIP_NONE, camera, -2, 20);
+			break;
+
+		case 3:
+			player->renderSprite(renderer, &player->attackDownSprites[3], SDL_FLIP_NONE, camera, 0, 0);
+			player->renderSprite(renderer, &player->swordVerticalSprites[3], SDL_FLIP_NONE, camera, 0, 19);
+			break;
+
+		case 4:
+			player->renderSprite(renderer, &player->attackDownSprites[4], SDL_FLIP_NONE, camera, 0, 0);
+			player->renderSprite(renderer, &player->swordVerticalSprites[4], SDL_FLIP_NONE, camera, 7, 19);
+			break;
+
+		case 5:
+			player->renderSprite(renderer, &player->attackDownSprites[5], SDL_FLIP_NONE, camera, 0, 0);
+			player->renderSprite(renderer, &player->swordVerticalSprites[5], SDL_FLIP_NONE, camera, 12, 13);
+			break;
+
+		case 6:
+			player->renderSprite(renderer, &player->attackDownSprites[6], SDL_FLIP_NONE, camera, 0, 0);
+			player->renderSprite(renderer, &player->swordVerticalSprites[6], SDL_FLIP_NONE, camera, 13, 3);
+			break;
+
+		case 7:
+			player->renderSprite(renderer, &player->attackDownSprites[6], SDL_FLIP_NONE, camera, 0, 0);
+			break;
+		}
 		break;
+
+
 	case LEFT:
-		player->renderSprite(renderer, &player->rollingLeftSprites[(player->frameNum / player->animationDelay) % 6], SDL_FLIP_NONE, camera, 0, offset);
+		switch (spriteToRender)
+		{
+		case 0:
+			player->renderSprite(renderer, &player->swordHorizontalSprites[0], SDL_FLIP_NONE, camera, -3, -5);
+			player->renderSprite(renderer, &player->attackLeftSprites[0], SDL_FLIP_NONE, camera, 0, 0);
+			break;
+
+		case 1:
+			player->renderSprite(renderer, &player->swordHorizontalSprites[1], SDL_FLIP_NONE, camera, -11, -5);
+			player->renderSprite(renderer, &player->attackLeftSprites[1], SDL_FLIP_NONE, camera, 0, 0);
+			break;
+
+		case 2:
+			player->renderSprite(renderer, &player->attackLeftSprites[2], SDL_FLIP_NONE, camera, 0, 0);
+			player->renderSprite(renderer, &player->swordHorizontalSprites[2], SDL_FLIP_NONE, camera, -15, 0);
+			break;
+
+		case 3:
+			player->renderSprite(renderer, &player->attackLeftSprites[3], SDL_FLIP_NONE, camera, 0, 0);
+			player->renderSprite(renderer, &player->swordHorizontalSprites[3], SDL_FLIP_NONE, camera, -15, 4);
+			break;
+
+		case 4:
+			player->renderSprite(renderer, &player->attackLeftSprites[4], SDL_FLIP_NONE, camera, 0, 0);
+			player->renderSprite(renderer, &player->swordHorizontalSprites[4], SDL_FLIP_NONE, camera, -14, 9);
+			break;
+
+		case 5:
+			player->renderSprite(renderer, &player->attackLeftSprites[5], SDL_FLIP_NONE, camera, 0, 0);
+			player->renderSprite(renderer, &player->swordHorizontalSprites[5], SDL_FLIP_NONE, camera, -7, 11);
+			break;
+
+		case 6:
+			player->renderSprite(renderer, &player->attackLeftSprites[6], SDL_FLIP_NONE, camera, 0, 0);
+			player->renderSprite(renderer, &player->swordHorizontalSprites[6], SDL_FLIP_NONE, camera, 0, 16);
+			break;
+
+		case 7:
+			player->renderSprite(renderer, &player->attackLeftSprites[6], SDL_FLIP_NONE, camera, 0, 0);
+			break;
+		}
 		break;
+
 	case RIGHT:
-		player->renderSprite(renderer, &player->rollingLeftSprites[(player->frameNum / player->animationDelay) % 6], SDL_FLIP_HORIZONTAL, camera, 0, offset);
+		switch (spriteToRender)
+		{
+		case 0:
+			player->renderSprite(renderer, &player->swordHorizontalSprites[0], SDL_FLIP_HORIZONTAL, camera, 3, -5);
+			player->renderSprite(renderer, &player->attackLeftSprites[0], SDL_FLIP_HORIZONTAL, camera, 0, 0);
+			break;
+
+		case 1:
+			player->renderSprite(renderer, &player->swordHorizontalSprites[1], SDL_FLIP_HORIZONTAL, camera, 11, -5);
+			player->renderSprite(renderer, &player->attackLeftSprites[1], SDL_FLIP_HORIZONTAL, camera, 0, 0);
+			break;
+
+		case 2:
+			player->renderSprite(renderer, &player->attackLeftSprites[2], SDL_FLIP_HORIZONTAL, camera, 0, 0);
+			player->renderSprite(renderer, &player->swordHorizontalSprites[2], SDL_FLIP_HORIZONTAL, camera, 15, 0);
+			break;
+
+		case 3:
+			player->renderSprite(renderer, &player->attackLeftSprites[3], SDL_FLIP_HORIZONTAL, camera, 0, 0);
+			player->renderSprite(renderer, &player->swordHorizontalSprites[3], SDL_FLIP_HORIZONTAL, camera, 15, 4);
+			break;
+
+		case 4:
+			player->renderSprite(renderer, &player->attackLeftSprites[4], SDL_FLIP_HORIZONTAL, camera, 0, 0);
+			player->renderSprite(renderer, &player->swordHorizontalSprites[4], SDL_FLIP_HORIZONTAL, camera, 14, 9);
+			break;
+
+		case 5:
+			player->renderSprite(renderer, &player->attackLeftSprites[5], SDL_FLIP_HORIZONTAL, camera, 0, 0);
+			player->renderSprite(renderer, &player->swordHorizontalSprites[5], SDL_FLIP_HORIZONTAL, camera, 7, 11);
+			break;
+
+		case 6:
+			player->renderSprite(renderer, &player->attackLeftSprites[6], SDL_FLIP_HORIZONTAL, camera, 0, 0);
+			player->renderSprite(renderer, &player->swordHorizontalSprites[6], SDL_FLIP_HORIZONTAL, camera, 0, 16);
+			break;
+
+		case 7:
+			player->renderSprite(renderer, &player->attackLeftSprites[6], SDL_FLIP_HORIZONTAL, camera, 0, 0);
+			break;
+		}
 		break;
+
 	case UP:
-		player->renderSprite(renderer, &player->rollingUpSprites[(player->frameNum / player->animationDelay) % 6], SDL_FLIP_NONE, camera, 0, offset);
+		switch (spriteToRender)
+		{
+		case 0:
+			player->renderSprite(renderer, &player->swordVerticalSprites[0],
+				(SDL_RendererFlip)(SDL_FLIP_HORIZONTAL | SDL_FLIP_VERTICAL),
+				camera, 7, 5);
+			player->renderSprite(renderer, &player->attackUpSprites[0], SDL_FLIP_NONE, camera, 0, 0);
+			break;
+
+		case 1:
+			player->renderSprite(renderer, &player->swordVerticalSprites[1],
+				(SDL_RendererFlip)(SDL_FLIP_HORIZONTAL | SDL_FLIP_VERTICAL),
+				camera,2, -5);
+			player->renderSprite(renderer, &player->attackUpSprites[1], SDL_FLIP_NONE, camera, 0, 0);
+			break;
+
+		case 2:
+			player->renderSprite(renderer, &player->swordVerticalSprites[2],
+				(SDL_RendererFlip)(SDL_FLIP_HORIZONTAL | SDL_FLIP_VERTICAL),
+				camera, 2, -12);
+			player->renderSprite(renderer, &player->attackUpSprites[2], SDL_FLIP_NONE, camera, 0, 0);
+			break;
+
+		case 3:
+			player->renderSprite(renderer, &player->swordVerticalSprites[3],
+				(SDL_RendererFlip)(SDL_FLIP_HORIZONTAL | SDL_FLIP_VERTICAL),
+				camera, 0, -13);
+			player->renderSprite(renderer, &player->attackUpSprites[3], SDL_FLIP_NONE, camera, 0, 0);
+			break;
+
+		case 4:
+			player->renderSprite(renderer, &player->swordVerticalSprites[4],
+				(SDL_RendererFlip)(SDL_FLIP_HORIZONTAL | SDL_FLIP_VERTICAL),
+				camera, -7, -9);
+			player->renderSprite(renderer, &player->attackUpSprites[4], SDL_FLIP_NONE, camera, 0, 0);
+			break;
+
+		case 5:
+			player->renderSprite(renderer, &player->swordVerticalSprites[5],
+				(SDL_RendererFlip)(SDL_FLIP_HORIZONTAL | SDL_FLIP_VERTICAL),
+				camera, -12, -2);
+			player->renderSprite(renderer, &player->attackUpSprites[5], SDL_FLIP_NONE, camera, 0, 0);
+			break;
+
+		case 6:
+			player->renderSprite(renderer, &player->swordVerticalSprites[6],
+				(SDL_RendererFlip)(SDL_FLIP_HORIZONTAL | SDL_FLIP_VERTICAL),
+				camera, -11, 4);
+			player->renderSprite(renderer, &player->attackUpSprites[6], SDL_FLIP_NONE, camera, 0, 0);
+			break;
+
+		case 7:
+			player->renderSprite(renderer, &player->attackUpSprites[6], SDL_FLIP_NONE, camera, 0, 0);
+			break;
+		}
 		break;
-	}*/
+
+
+	}
+
+	player->frameNum++;
+
+	if (player->frameNum >= 8 * spriteDuration)
+	{
+		if (player->willMove())
+			changeState(player, WalkingState::instance());
+		else
+			changeState(player, IdleState::instance());
+	}
 }
+
 
 void LockedInState::handleInput(Player* player, ControllerManager* controller)
 {
@@ -346,10 +561,6 @@ void Player::defineSrcSprites()
 	// shadow
 	shadowSprite = { 320, 0, spriteWidth, spriteHeight };
 
-	// sword
-	swordHorizontal = { 352, 0, 16, 16 };
-	swordVertical = { 368, 0, 16, 16 };
-
 	// WALKING
 	for (int i = 0; i < 10; i++){
 		walkingDownSprites[i] = { 0 + (32 * i), 32, spriteWidth, spriteHeight };
@@ -378,17 +589,24 @@ void Player::defineSrcSprites()
 		attackDownSprites[i] = { 0 + (32 * i), 96, spriteWidth, spriteHeight };
 	}
 	for (int i = 0; i < 8; i++) {
-		attackLeftSprites[i] = { 288 + (32 * i), 96, spriteWidth, spriteHeight };
+		attackLeftSprites[i] = { 256 + (32 * i), 96, spriteWidth, spriteHeight };
 	}
 	for (int i = 0; i < 8; i++) {
-		attackUpSprites[i] = { 576 + (32 * i), 96, spriteWidth, spriteHeight };
+		attackUpSprites[i] = { 512 + (32 * i), 96, spriteWidth, spriteHeight };
 	}
+	//sword
+	for (int i = 0; i < 7; i++) {
+		swordVerticalSprites[i] = { 0 + (32 * i), 128, spriteWidth, spriteHeight };
+	}
+	for (int i = 0; i < 7; i++) {
+		swordHorizontalSprites[i] = { 256 + (32 * i), 128, spriteWidth, spriteHeight };
+	}
+
 }
 
 
 void Player::handleInput(ControllerManager* controller)
 {
-	std::cout << "player handle input \n";
 	updateDirection(controller);
 	_state->handleInput(this, controller);
 }
@@ -454,7 +672,6 @@ void Player::onCollision(Collider* thisCollider, Collider* other)
 			break;
 		}
 		
-
 		int colliderDifx = thisCollider->getCenterx() - startColliderx;
 		int colliderDify = thisCollider->getCentery() - startCollidery;
 

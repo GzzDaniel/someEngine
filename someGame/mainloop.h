@@ -201,6 +201,11 @@ private:
 					_controllerManager.setLastKeyEvent(KEY_PRESS_CTRL);
 					handleInput(&_controllerManager);
 					break;
+				case SDLK_z:
+					//std::cout << "interact pressed" << std::endl;
+					_controllerManager.setLastKeyEvent(KEY_PRESS_ATTACK);
+					handleInput(&_controllerManager);
+					break;
 				}
 			}
 			else if (sdl_event.type == SDL_KEYUP) {

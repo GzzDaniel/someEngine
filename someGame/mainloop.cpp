@@ -6,7 +6,7 @@ Engine* pe = &engine;
 
 // test function to create players at runtime
 void makePlayer() {
-	Player* link = new Player(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, 2);
+	Player* link = new Player(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, 4);
 	pe->addInputObserver(link);
 	pe->addColliderObserver(link);
 	link->loadmedia(_renderer, "assets/link2.png");

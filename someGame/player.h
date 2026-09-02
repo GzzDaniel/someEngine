@@ -217,12 +217,22 @@ public:
 	}
 	void updateDirection(ControllerManager* controller);
 	void moveCharacter();
+
+	bool willMove() {
+		for (int i = 0; i < NUMBER_OF_DIRECTIONS; i++) {
+			if (moveBools[i]) {
+				return true;
+			}
+		}
+		return false;
+	}
 private:
 	friend class WalkingState;
 	friend class IdleState;
 	friend class RollState;
 	friend class PlayerState;
 	friend class JumpingState;
+	friend class AttackState;
 
 	int scale;
 
@@ -238,8 +248,8 @@ private:
 	SDL_Rect attackLeftSprites[8];
 	SDL_Rect attackUpSprites[8];
 	SDL_Rect shadowSprite;
-	SDL_Rect swordHorizontal;
-	SDL_Rect swordVertical;
+	SDL_Rect swordHorizontalSprites[7];
+	SDL_Rect swordVerticalSprites[7];
 	int frameNum;
 
 	PlayerDirection direction;

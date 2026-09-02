@@ -134,6 +134,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="controllermanager.cpp" />
+    <ClCompile Include="enemies.cpp" />
     <ClCompile Include="gameObject.cpp" />
     <ClCompile Include="mainloop.cpp" />
     <ClCompile Include="player.cpp" />
