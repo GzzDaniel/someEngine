@@ -133,6 +133,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="combat.cpp" />
     <ClCompile Include="controllermanager.cpp" />
     <ClCompile Include="enemies.cpp" />
     <ClCompile Include="gameObject.cpp" />
@@ -141,6 +142,7 @@
     <ClCompile Include="SecondaryEntities.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="combat.h" />
     <ClInclude Include="controllermanager.h" />
     <ClInclude Include="gameObject.h" />
     <ClInclude Include="mainloop.h" />

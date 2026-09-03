@@ -1,3 +1,5 @@
+// use combat systems like health, damage, status effects, enemy-player behaviors
+
 #ifndef ENEMIES_H_
 #define ENEMIES_H_
 #include <SDL.h>
@@ -10,16 +12,21 @@
 #include "gameObject.h"
 #include "controllermanager.h"
 #include "player.h"
+#include "combat.h"
 
-
-class Enemy : public GameObject, public ColliderManager
+class GenericEnemy : public GameObject, public ColliderManager, public SpriteRenderer, public CombatObject
 {
-public:
-	Enemy() {}
-	~Enemy() {}
-private:
+	GenericEnemy(int x, int y) :
+		GameObject(x, y),
+		SpriteRenderer(x, y, 32, 32, 2, -16, -16)
+	{
+		Collider c(x, y, 32 * 2, 32 * 2, TYPE_ENEMY);
+		addNewCollider(0, c);
+	}	
+
 
 };
+
 
 
 
